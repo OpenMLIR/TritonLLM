@@ -284,7 +284,7 @@ if __name__ == "__main__":
         "--reasoning-effort",
         metavar="REASONING_EFFORT",
         type=str,
-        default="high",
+        default="low",
         choices=["high", "medium", "low"],
         help="Reasoning effort",
     )
