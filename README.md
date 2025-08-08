@@ -11,5 +11,5 @@ pip install -e triton_kernels
 run cmd
 ```bash
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
-python -m gpt_oss.generate --backend triton gpt-oss-20b/original/
+python -m gpt_oss.generate gpt-oss-20b/original/
 ```
