@@ -59,22 +59,10 @@ def get_user_input():
 
 
 def main(args):
-    match args.backend:
-        case "triton":
-            from gpt_oss.triton.model import TokenGenerator as TritonGenerator
-            from gpt_oss.torch.utils import init_distributed
-            device = init_distributed()
-            generator = TritonGenerator(args.checkpoint, args.context, device)
-        case "torch":
-            from gpt_oss.torch.model import TokenGenerator as TorchGenerator
-            from gpt_oss.torch.utils import init_distributed
-            device = init_distributed()
-            generator = TorchGenerator(args.checkpoint, device)
-        case "vllm":
-            from gpt_oss.vllm.token_generator import TokenGenerator as VLLMGenerator
-            generator = VLLMGenerator(args.checkpoint, tensor_parallel_size=2)
-        case _:
-            raise ValueError(f"Invalid backend: {args.backend}")
+    from gpt_oss.triton.model import TokenGenerator as TritonGenerator
+    from gpt_oss.torch.utils import init_distributed
+    device = init_distributed()
+    generator = TritonGenerator(args.checkpoint, args.context, device)
 
     encoding = load_harmony_encoding(HarmonyEncodingName.HARMONY_GPT_OSS)
 
@@ -296,7 +284,7 @@ if __name__ == "__main__":
         "--reasoning-effort",
         metavar="REASONING_EFFORT",
         type=str,
-        default="low",
+        default="high",
         choices=["high", "medium", "low"],
         help="Reasoning effort",
     )
@@ -344,13 +332,6 @@ if __name__ == "__main__":
         default=False,
         action="store_true",
         help="Raw mode (does not render Harmony encoding)",
-    )
-    parser.add_argument(
-        "--backend",
-        type=str,
-        default="triton",
-        choices=["triton", "torch", "vllm"],
-        help="Inference backend",
     )
     args = parser.parse_args()
 
