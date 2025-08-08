@@ -6,7 +6,6 @@ triton_llm is a lightweight and efficient LLM inference framework powered by cus
 git clone https://github.com/OpenMLIR/triton_llm
 pip install -e .[triton]
 pip install -e triton_kernels
-pip install triton==3.4.0
 ```
 
 run cmd
