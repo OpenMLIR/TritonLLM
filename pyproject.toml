@@ -1,5 +1,5 @@
 [project]
-name = "gpt-oss"
+name = "triton_llm"
 description = "A collection of reference inference implementations for gpt-oss by OpenAI"
 
 dependencies = [
@@ -24,10 +24,7 @@ version = "0.0.1"
 
 [project.optional-dependencies]
 triton = ["triton==3.4.0", "safetensors>=0.5.3"]
-torch = ["safetensors>=0.5.3", "torch>=2.7.0"]
-metal = ["numpy", "tqdm", "safetensors", "torch"]
 test = ["pytest>=8.4.1", "httpx>=0.28.1"]
-eval = ["pandas", "numpy", "openai", "jinja2", "tqdm", "blobfile"]
 
 [build-system]
 requires = ["setuptools>=68"]
