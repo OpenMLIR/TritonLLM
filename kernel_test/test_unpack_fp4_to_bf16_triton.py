@@ -5,9 +5,8 @@ from triton_kernels.testing import assert_close
 
 
 @triton.jit
-def _unpack_fp4_to_bf16_triton(x):
+def _unpack_fp4_to_bf16_triton_hopper_and_later(x):
     # For now we implement just H100 support (mul.bf16x2)
-    # A100 support is possible via fma
     r0, r1 = tl.inline_asm_elementwise(
         r"""
         {
@@ -50,8 +49,7 @@ def _unpack_fp4_to_bf16_triton(x):
 
 
 @triton.jit
-def _unpack_fp4_to_bf16_triton_ptx(x):
-    # A100 support is possible via fmul
+def _unpack_fp4_to_bf16_triton_before_hopper(x):
     # A100 support is possible via fmul
     r0, r1 = tl.inline_asm_elementwise(
         r"""
@@ -180,7 +178,7 @@ def _unpack_fp4_to_bf16_triton_ptx(x):
 def kernel_unpack1(ptr_in, ptr_out):
     in_offset = tl.arange(0, 64)[:, None] * 128 + tl.arange(0, 128)[None, :]
     x = tl.load(ptr_in + in_offset)
-    x = _unpack_fp4_to_bf16_triton(x)
+    x = _unpack_fp4_to_bf16_triton_hopper_and_later(x)
     out_offset = tl.arange(0, 64)[:, None] * 256 + tl.arange(0, 256)[None, :]
     tl.store(ptr_out + out_offset, x)
 
@@ -188,7 +186,7 @@ def kernel_unpack1(ptr_in, ptr_out):
 def kernel_unpack2(ptr_in, ptr_out):
     in_offset = tl.arange(0, 64)[:, None] * 128 + tl.arange(0, 128)[None, :]
     x = tl.load(ptr_in + in_offset)
-    x = _unpack_fp4_to_bf16_triton_ptx(x)
+    x = _unpack_fp4_to_bf16_triton_before_hopper(x)
     out_offset = tl.arange(0, 64)[:, None] * 256 + tl.arange(0, 256)[None, :]
     tl.store(ptr_out + out_offset, x)
 
