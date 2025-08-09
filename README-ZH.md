@@ -1,0 +1,54 @@
+# triton_llm
+
+以 Triton 算子为核心的 LLM 推理，灵活且模块化。并以 [gpt-oss](https://github.com/openai/gpt-oss) 模型为起点，关注 Triton算子优化后的CUBIN二进制文件并使用[triton_runner](https://github.com/OpenMLIR/triton_runner)进行LLM推理。
+
+将针对**RTX 5090**(Blackwell)进行优化。
+
+## 支持的 GPU（按 Compute Capability）
+
+- **sm120**：RTX 5090、RTX PRO 6000 等  
+- **sm90**：H100、H200、H20 等  
+- **sm80**：A800、A100  
+- **sm89**：RTX 4090、RTX 6000、L40 等  
+- **sm86**：RTX 3090、A10 等  
+
+## 显存要求
+
+- 若 GPU 显存 **≥ 24 GB**，可运行 **gpt-oss-20b**。  
+- 若 GPU 显存 **≥ 80 GB**，可运行 **gpt-oss-120b**。
+
+## 安装
+
+```bash
+git clone https://github.com/OpenMLIR/triton_llm
+cd triton_llm
+pip install -e .[triton]
+pip install -e triton_kernels
+```
+
+## 下载模型
+
+[modelscope](https://www.modelscope.cn)很好用，速度也很快。下载120b模型请自行修改命令。
+
+```bash
+pip install modelscope
+
+modelscope download openai-mirror/gpt-oss-20b  --include "original/*" --local_dir gpt-oss-20b/
+```
+
+## 运行
+
+使用120b模型请自行修改命令。
+
+```bash
+# 测试
+python -m gpt_oss.generate gpt-oss-20b/original/
+
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+# 对话
+python -m gpt_oss.chat gpt-oss-20b/original/
+```
+
+## 项目文档
+
+[5090显卡+Triton，轻松玩转GPT-OSS-20B！](https://zhuanlan.zhihu.com/p/1936692690503865129)

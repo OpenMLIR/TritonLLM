@@ -1,6 +1,8 @@
 # triton_llm
 
-implements modular Triton-backed LLM inference with an emphasis on kernel optimization using CUBINs. The initial target is the [gpt-oss](https://github.com/openai/gpt-oss) model, executed via [triton_runner](https://github.com/OpenMLIR/triton_runner) and tuned for **RTX 5090** (sm120). Now support 4090(sm120), 4090(sm89), A10(sm86, 3090 might work).
+> Chinese Documentation - [中文文档](./README-ZH.md)
+
+implements modular Triton-backed LLM inference with an emphasis on kernel optimization using CUBINs. The initial target is the [gpt-oss](https://github.com/openai/gpt-oss) model, executed via [triton_runner](https://github.com/OpenMLIR/triton_runner) and will be tuned for **RTX 5090** (sm120). Now support an NVIDIA GPU with [compute capability](https://developer.nvidia.com/cuda-gpus) sm120(RTX 5090, RTX PRO 6000, etc.), sm90(H100, H200, H20, etc.), sm80(A800, A100), sm89(RTX 4090, RTX 6000, L40, etc.) and sm86(RTX 3090, A10, etc.). If the GPU memory is greater than or equal to **24 GB**, you can run the **gpt-oss-20b**; if it is greater than or equal to **80 GB**, you can run the **gpt-oss-120b**.
 
 ## Installation
 
