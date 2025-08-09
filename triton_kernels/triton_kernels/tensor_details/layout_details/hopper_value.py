@@ -233,12 +233,25 @@ def _unpack_fp4_to_bf16_triton(x):
     r0, r1 = tl.inline_asm_elementwise(
         r"""
         {
-            .reg .b32 b, c, d<7>, scale;
+            .reg .b32 b, c, d<7>, scale, temp;
             .reg .b32 bias;
+            .reg .b16 low, high, t16;
             mov.b32 bias, 0x7e807e80; // 2 ** 126 == 2 ** (bias_bf16 - bias_fp2)
             // We add the missing bias to the scale directly
             and.b32 $0, $4, 0b10000001110000001000000111000000;
-            mul.bf16x2 $0, $0, bias;
+            cvt.b16.b32 low, $0;
+            cvt.b16.b32 t16, bias;
+            mul.bf16 low, low, t16;
+            shr.u32 temp, $0, 16;
+            cvt.b16.b32 high, temp;
+            shr.u32 temp, bias, 16;
+            cvt.b16.b32 t16, temp;
+            mul.bf16 high, high, t16;
+            cvt.u32.u16 $0, low;
+            cvt.u32.u16 temp, high;
+            shl.b32 temp, temp, 16;
+            or.b32 $0, $0, temp;
+            // mul.bf16x2 $0, $0, bias;
             shl.b32 b, $4, 3;
             and.b32 $1, b,  0b10000001110000001000000111000000;
             mul.bf16x2 $1, $1, bias;
