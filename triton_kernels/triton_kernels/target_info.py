@@ -49,6 +49,22 @@ def cuda_capability_geq(major, minor=0):
     return cached_capabilities["cuda"] >= (major, minor)
 
 
+def cuda_capability_eq(major, minor=0):
+    """
+    Determines whether we have compute capability == (major, minor) and
+    returns this as a constexpr boolean. This can be used for guarding
+    inline asm implementations that require a certain compute capability.
+    """
+    if is_hip():
+        return False
+    if "cuda" not in cached_capabilities:
+        if torch.cuda.is_available():
+            cached_capabilities["cuda"] = torch.cuda.get_device_capability()
+        else:
+            cached_capabilities["cuda"] = (0, 0)
+    return cached_capabilities["cuda"] == (major, minor)
+
+
 def get_cdna_version():
     """
     Gets the AMD architecture version, i.e. CDNA3 or CDNA4, currently

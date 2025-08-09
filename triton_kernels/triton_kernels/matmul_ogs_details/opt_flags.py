@@ -2,7 +2,7 @@
 # fmt: off
 from dataclasses import dataclass
 import triton
-from triton_kernels.target_info import get_cdna_version
+from triton_kernels.target_info import get_cdna_version, cuda_capability_eq
 import torch
 from .opt_flags_details import opt_flags_amd, opt_flags_nvidia
 
@@ -162,6 +162,8 @@ def make_default_opt_flags_nvidia(
     # block n
     arch = None
     block_n = opt_flags_nvidia.compute_block_n(n, arch, precision_config)
+    if cuda_capability_eq(8, 6):
+        block_n = block_n // 2
     # is_persistent
     grid_size = opt_flags_nvidia.compute_grid_size(routing_data, m, n, block_m, block_n)
     n_sms = torch.cuda.get_device_properties(0).multi_processor_count
@@ -180,7 +182,8 @@ def make_default_opt_flags_nvidia(
         block_k = constraints["block_k"]
     else:
         block_k = opt_flags_nvidia.compute_block_k(m, k, is_persistent, lhs_dtype, rhs_dtype, precision_config)
-    block_k //= 2
+    if cuda_capability_eq(120) or cuda_capability_eq(8, 9) or cuda_capability_eq(8, 6):
+        block_k //= 2
     # split_k
     if constraints.get("split_k", None) is not None:
         split_k = constraints["split_k"]
