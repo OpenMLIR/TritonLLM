@@ -1,6 +1,6 @@
 # triton_llm
 
-implements modular Triton-backed LLM inference with an emphasis on kernel optimization using CUBINs. The initial target is the [gpt-oss](https://github.com/openai/gpt-oss) model, executed via [triton_runner](https://github.com/OpenMLIR/triton_runner) and tuned for **RTX 5090** (sm120).
+implements modular Triton-backed LLM inference with an emphasis on kernel optimization using CUBINs. The initial target is the [gpt-oss](https://github.com/openai/gpt-oss) model, executed via [triton_runner](https://github.com/OpenMLIR/triton_runner) and tuned for **RTX 5090** (sm120). Now support 4090(sm120), 4090(sm89).
 
 ## Installation
 
