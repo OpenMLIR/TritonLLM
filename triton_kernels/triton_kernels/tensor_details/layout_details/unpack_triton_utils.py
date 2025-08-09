@@ -4,7 +4,6 @@ import triton.language as tl
 @triton.jit
 def _unpack_fp4_to_bf16_triton_hopper_and_later(x):
     # For now we implement just H100 support (mul.bf16x2)
-    # A100 support is possible via fma
     r0, r1 = tl.inline_asm_elementwise(
         r"""
         {
