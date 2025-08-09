@@ -52,10 +52,11 @@ def _unpack_fp4_to_bf16_triton(x):
 @triton.jit
 def _unpack_fp4_to_bf16_triton_ptx(x):
     # A100 support is possible via fmul
+    # A100 support is possible via fmul
     r0, r1 = tl.inline_asm_elementwise(
         r"""
         {
-            .reg .b32 b, c, d<7>, scale, temp;
+            .reg .b32 b, c, d<7>, scale, temp, temp1;
             .reg .b32 bias;
             .reg .b16 low, high, t16;
             mov.b32 bias, 0x7e807e80; // 2 ** 126 == 2 ** (bias_bf16 - bias_fp2)
@@ -63,7 +64,11 @@ def _unpack_fp4_to_bf16_triton_ptx(x):
             and.b32 $0, $4, 0b10000001110000001000000111000000;
             cvt.b16.b32 low, $0;
             cvt.b16.b32 t16, bias;
-            mul.bf16 low, low, t16;
+            cvt.f32.bf16 temp, low;
+            cvt.f32.bf16 temp1, t16;
+            mul.f32 temp, temp, temp1;
+            cvt.rn.bf16.f32 low, temp;
+            // mul.bf16 low, low, t16;
             shr.u32 temp, $0, 16;
             cvt.b16.b32 high, temp;
             shr.u32 temp, bias, 16;
@@ -140,6 +145,7 @@ def _unpack_fp4_to_bf16_triton_ptx(x):
     x = x.trans(0, 1, 3, 2)
     x = x.reshape(x.shape[0], x.shape[1] * x.shape[2] * x.shape[3])
     return x
+
 
 
 @triton.jit
