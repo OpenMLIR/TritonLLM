@@ -5,7 +5,7 @@ from .base import Layout
 from ...target_info import cuda_capability_geq
 
 
-if cuda_capability_geq(8):
+if not cuda_capability_geq(9):
     from .unpack_triton_utils import _unpack_fp4_to_bf16_triton_before_hopper as _unpack_fp4_to_bf16_triton
 else:
     from .unpack_triton_utils import _unpack_fp4_to_bf16_triton_hopper_and_later as _unpack_fp4_to_bf16_triton
