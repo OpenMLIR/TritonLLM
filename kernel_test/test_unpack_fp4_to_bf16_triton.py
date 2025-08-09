@@ -76,10 +76,34 @@ def _unpack_fp4_to_bf16_triton_ptx(x):
             // mul.bf16x2 $0, $0, bias;
             shl.b32 b, $4, 3;
             and.b32 $1, b,  0b10000001110000001000000111000000;
-            mul.bf16x2 $1, $1, bias;
+            cvt.b16.b32 low, $1;
+            cvt.b16.b32 t16, bias;
+            mul.bf16 low, low, t16;
+            shr.u32 temp, $1, 16;
+            cvt.b16.b32 high, temp;
+            shr.u32 temp, bias, 16;
+            cvt.b16.b32 t16, temp;
+            mul.bf16 high, high, t16;
+            cvt.u32.u16 $1, low;
+            cvt.u32.u16 temp, high;
+            shl.b32 temp, temp, 16;
+            or.b32 $1, $1, temp;
+            // mul.bf16x2 $1, $1, bias;
             shl.b32 c, $4, 6;
             and.b32 $2, c,  0b10000001110000001000000111000000;
-            mul.bf16x2 $2, $2, bias;
+            cvt.b16.b32 low, $2;
+            cvt.b16.b32 t16, bias;
+            mul.bf16 low, low, t16;
+            shr.u32 temp, $2, 16;
+            cvt.b16.b32 high, temp;
+            shr.u32 temp, bias, 16;
+            cvt.b16.b32 t16, temp;
+            mul.bf16 high, high, t16;
+            cvt.u32.u16 $2, low;
+            cvt.u32.u16 temp, high;
+            shl.b32 temp, temp, 16;
+            or.b32 $2, $2, temp;
+            // mul.bf16x2 $2, $2, bias;
             // Unpack last two elements
             shl.b32 d0, $4, 1;
             and.b32 d1, d0, 0b10000000000000001000000000000000;
@@ -89,7 +113,19 @@ def _unpack_fp4_to_bf16_triton_ptx(x):
             shr.b32 d5, $4, 7;
             and.b32 d6, d5, 0b00000000010000000000000001000000;
             or.b32 $3, d4, d6;
-            mul.bf16x2 $3, $3, bias;
+            cvt.b16.b32 low, $3;
+            cvt.b16.b32 t16, bias;
+            mul.bf16 low, low, t16;
+            shr.u32 temp, $3, 16;
+            cvt.b16.b32 high, temp;
+            shr.u32 temp, bias, 16;
+            cvt.b16.b32 t16, temp;
+            mul.bf16 high, high, t16;
+            cvt.u32.u16 $3, low;
+            cvt.u32.u16 temp, high;
+            shl.b32 temp, temp, 16;
+            or.b32 $3, $3, temp;
+            // mul.bf16x2 $3, $3, bias;
         }
         """,
         constraints="=r,=r,=r,=r,r",
