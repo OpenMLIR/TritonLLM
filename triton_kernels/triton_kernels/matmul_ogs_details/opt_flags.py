@@ -182,7 +182,7 @@ def make_default_opt_flags_nvidia(
         block_k = constraints["block_k"]
     else:
         block_k = opt_flags_nvidia.compute_block_k(m, k, is_persistent, lhs_dtype, rhs_dtype, precision_config)
-    if cuda_capability_eq(120) or cuda_capability_eq(8, 9) or cuda_capability_eq(8, 6):
+    if cuda_capability_eq(12) or cuda_capability_eq(8, 9) or cuda_capability_eq(8, 6):
         block_k //= 2
     # split_k
     if constraints.get("split_k", None) is not None:
