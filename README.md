@@ -31,3 +31,15 @@ export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 # chat
 python -m gpt_oss.chat gpt-oss-20b/original/
 ```
+
+## Run use streamlit with Responses API
+
+You can also use Streamlit to interact with the [Responses API](https://github.com/openai/gpt-oss?tab=readme-ov-file#responses-api), providing a convenient web interface for managing the project.
+
+```bash
+pip install streamlit
+
+python -m gpt_oss.responses_api.serve
+
+streamlit run streamlit/streamlit_chat.py
+```

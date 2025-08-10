@@ -49,6 +49,18 @@ export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 python -m gpt_oss.chat gpt-oss-20b/original/
 ```
 
+## 网页版运行
+
+你同样可以使用 streamlit 通过调用 Responses API 来使用这个项目，网页更加直观，且方便共享。
+
+```bash
+pip install streamlit
+
+python -m gpt_oss.responses_api.serve
+
+streamlit run streamlit/streamlit_chat.py
+```
+
 ## 项目文档
 
 [5090显卡+Triton，轻松玩转GPT-OSS-20B！](https://zhuanlan.zhihu.com/p/1936692690503865129)
