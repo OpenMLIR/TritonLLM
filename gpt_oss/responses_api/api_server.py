@@ -600,14 +600,14 @@ def create_api_server(
                         )
                     )
 
-                try:
-                    # purely for debugging purposes
-                    output_token_text = encoding.decode_utf8([next_tok])
-                    self.output_text += output_token_text
-                    print(output_token_text, end="", flush=True)
+                # try:
+                #     # purely for debugging purposes
+                #     output_token_text = encoding.decode_utf8([next_tok])
+                #     self.output_text += output_token_text
+                #     print(output_token_text, end="", flush=True)
 
-                except RuntimeError:
-                    pass
+                # except RuntimeError:
+                #     pass
 
                 if next_tok in encoding.stop_tokens_for_assistant_actions():
                     if len(self.parser.messages) > 0:
@@ -676,7 +676,7 @@ def create_api_server(
                                 Conversation.from_messages(result), Role.ASSISTANT
                             )
                             
-                            print(encoding.decode_utf8(new_tokens))
+                            # print(encoding.decode_utf8(new_tokens))
                             self.output_tokens.append(next_tok)
                             self.tokens.append(encoding.encode('<|end|>', allowed_special="all")[0])
 
@@ -740,7 +740,7 @@ def create_api_server(
 
     @app.post("/v1/responses", response_model=ResponseObject)
     async def generate(body: ResponsesRequest, request: Request):
-        print("request received")
+        # print("request received")
 
         use_browser_tool = any(
             getattr(tool, "type", None) == "browser_search"
@@ -887,7 +887,7 @@ def create_api_server(
         initial_tokens = encoding.render_conversation_for_completion(
             conversation, Role.ASSISTANT
         )
-        print(encoding.decode_utf8(initial_tokens))
+        # print(encoding.decode_utf8(initial_tokens))
         response_id = f"resp_{uuid.uuid4().hex}"
 
         def store_callback(rid: str, req: ResponsesRequest, resp: ResponseObject):
