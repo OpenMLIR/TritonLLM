@@ -418,6 +418,9 @@ class Transformer(torch.nn.Module):
             x = self.unembedding(x)
         return x.float()
 
+    def prefill(self, x: torch.Tensor, caches):
+        self.forward(x, caches)
+
     @staticmethod
     def from_checkpoint(
         path: str, config: ModelConfig | None = None, device: str | torch.device = "cuda",
