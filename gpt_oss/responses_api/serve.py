@@ -17,7 +17,7 @@ if __name__ == "__main__":
         metavar="FILE",
         type=str,
         help="Path to the SafeTensors checkpoint",
-        default="gpt-oss-20b",
+        default="gpt-oss-20b/original",
         required=False,
     )
     parser.add_argument(

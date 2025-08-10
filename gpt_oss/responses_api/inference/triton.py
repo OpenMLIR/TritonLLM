@@ -33,7 +33,7 @@ def load_model(checkpoint: str):
 
 def get_infer_next_token(model, device):
     caches = [
-        Cache(CONCURRENT_SESSIONS, CONTEXT, model.config.num_key_value_heads)
+        Cache(CONCURRENT_SESSIONS, CONTEXT, model.config.num_key_value_heads, device=device)
         for _ in range(len(model.block))
     ]
     # offsets = torch.zeros(CONCURRENT_SESSIONS, dtype=torch.int32, device=device) # TBD
@@ -43,6 +43,7 @@ def get_infer_next_token(model, device):
     tokens_so_far = []
 
     model.prefill(torch.zeros(1, 4, dtype=torch.int32, device=device), caches)
+
     graph = torch.cuda.CUDAGraph()
     with torch.cuda.graph(graph):
         logits = model(input_token[None, :], caches=caches)[0]
