@@ -8,6 +8,7 @@ import asyncio
 import datetime
 import os
 import time
+import random
 
 from pathlib import Path
 
@@ -61,6 +62,49 @@ def get_user_input():
         torch.distributed.broadcast_object_list(user_input_list, 0)
     return user_input_list[0]
 
+def once_inference(user_message, messages, encoding, generator):
+    token_num = 0
+    user_message = Message.from_role_and_content(Role.USER, user_message)
+    messages.append(user_message)
+
+    conversation = Conversation.from_messages(messages)
+    tokens = encoding.render_conversation_for_completion(
+        conversation, Role.ASSISTANT
+    )
+
+    if args.raw:
+        # Print the last two tokens, which are the start of the assistant message
+        print(encoding.decode(tokens[-2:]), flush=True, end="")
+
+    parser = StreamableParser(encoding, role=Role.ASSISTANT)
+    field_created = False
+    current_output_text = ""
+    output_text_delta_buffer = ""
+    for predicted_token in generator.generate(tokens, encoding.stop_tokens_for_assistant_actions()):
+        token_num += 1
+        parser.process(predicted_token)
+
+        if not parser.last_content_delta:
+            continue
+
+        should_send_output_text_delta = True
+        output_text_delta_buffer += parser.last_content_delta
+        if args.browser:
+            updated_output_text, _annotations, has_partial_citations = browser_tool.normalize_citations(current_output_text + output_text_delta_buffer)
+            output_text_delta_buffer = updated_output_text[len(current_output_text):]
+            if has_partial_citations:
+                should_send_output_text_delta = False
+        if should_send_output_text_delta:
+            current_output_text += output_text_delta_buffer
+            output_text_delta_buffer = ""
+    # has 10 parser.last_content_delta
+    return token_num - 10
+
+def get_file_lines_with_random(file_name):
+    with open("bench/promt.txt", "r", encoding="utf-8") as f:
+        lines = f.read().splitlines()
+    random.shuffle(lines)
+    return lines
 
 def main(args):
     from gpt_oss.triton.model import TokenGenerator as TritonGenerator
@@ -140,145 +184,22 @@ def main(args):
 
     # Print the system message and the user message start
     MESSAGE_PADDING = 12
-    while True:
-        last_message = messages[-1]
-        if last_message.recipient is None:
-            if args.raw:
-                print(user_message_start, end="", flush=True)
-                user_message = get_user_input()
-                print(user_message_end, flush=True, end="")
-            else:
-                print(termcolor.colored("User:".ljust(MESSAGE_PADDING), "red"), flush=True)
-                user_message = get_user_input()
-            user_message = Message.from_role_and_content(Role.USER, user_message)
-            messages.append(user_message)
-        else:
-            # Tool or function call
-            if last_message.recipient.startswith("browser."):
-                assert args.browser, "Browser tool is not enabled"
-                tool_name = "Search"
-                async def run_tool():
-                    results = []
-                    async for msg in browser_tool.process(last_message):
-                        results.append(msg)
-                    return results
-
-                result = asyncio.run(run_tool())
-                messages += result
-            elif last_message.recipient.startswith("python"):
-                assert args.python, "Python tool is not enabled"
-                tool_name = "Python"
-                async def run_tool():
-                    results = []
-                    async for msg in python_tool.process(last_message):
-                        results.append(msg)
-                    return results
-
-                result = asyncio.run(run_tool())
-                messages += result
-            elif last_message.recipient == "functions.apply_patch":
-                assert args.apply_patch, "Apply patch tool is not enabled"
-                tool_name = "Apply Patch"
-                text = last_message.content[0].text
-                tool_output = None
-
-                if text.startswith("{"):
-                    # this is json, try to extract the patch from it
-                    import json
-                    try:
-                        some_dict = json.loads(text)
-                        _, text = some_dict.popitem()
-                    except Exception as e:
-                        tool_output = f"Error parsing JSON: {e}"
-
-                if tool_output is None:
-                    try:
-                        tool_output = apply_patch.apply_patch(text)
-                    except Exception as e:
-                        tool_output = f"Error applying patch: {e}"
-
-                message = (
-                    Message(
-                        author=Author.new(Role.TOOL, last_message.recipient),
-                        content=[TextContent(text=tool_output)]
-                    )
-                    .with_recipient("assistant")
-                )
-                if last_message.channel:
-                    message = message.with_channel(last_message.channel)
-
-                result = [message]
-                messages += result
-            else:
-                raise ValueError(f"Unknown tool or function call: {last_message.recipient}")
-            # Print the tool or function call result
-            if args.raw:
-                rendered_result = encoding.render_conversation(Conversation.from_messages(result))
-                print(encoding.decode(rendered_result), flush=True, end="")
-            else:
-                print(termcolor.colored(f"{tool_name} output:".ljust(MESSAGE_PADDING), "magenta"), flush=True)
-                if tool_name == "Search" and not args.show_browser_results:
-                    print("[Search results fed to the model]")
-                else:
-                    print(result[0].content[0].text)
-
-        conversation = Conversation.from_messages(messages)
-        tokens = encoding.render_conversation_for_completion(
-            conversation, Role.ASSISTANT
-        )
-
-        if args.raw:
-            # Print the last two tokens, which are the start of the assistant message
-            print(encoding.decode(tokens[-2:]), flush=True, end="")
-
-        parser = StreamableParser(encoding, role=Role.ASSISTANT)
-        field_created = False
-        current_output_text = ""
-        output_text_delta_buffer = ""
-        token_begin = time.perf_counter()
-        token_num = 0
-        for predicted_token in generator.generate(tokens, encoding.stop_tokens_for_assistant_actions()):
-            token_num += 1
-            parser.process(predicted_token)
-            if args.raw:
-                print(encoding.decode([predicted_token]), end="", flush=True)
-                continue
-
-            if parser.state == StreamState.EXPECT_START:
-                print("")  # new line
-                field_created = False
-
-            if not parser.last_content_delta:
-                continue
-
-            if not field_created:
-                field_created = True
-                if parser.current_channel == "final":
-                    print(termcolor.colored("Assistant:", "green"), flush=True)
-                elif parser.current_recipient is not None:
-                    print(termcolor.colored(f"Tool call to {parser.current_recipient}:", "cyan"), flush=True)
-                else:
-                    print(termcolor.colored("CoT:", "yellow"), flush=True)
-
-            should_send_output_text_delta = True
-            output_text_delta_buffer += parser.last_content_delta
-            if args.browser:
-                updated_output_text, _annotations, has_partial_citations = browser_tool.normalize_citations(current_output_text + output_text_delta_buffer)
-                output_text_delta_buffer = updated_output_text[len(current_output_text):]
-                if has_partial_citations:
-                    should_send_output_text_delta = False
-            if should_send_output_text_delta:
-                print(output_text_delta_buffer, end="", flush=True)
-                current_output_text += output_text_delta_buffer
-                output_text_delta_buffer = ""
-        # token_num = len(tokenizer.encode(current_output_text))
-        # has 10 parser.last_content_delta
-        token_num -=  10
-        token_end = time.perf_counter()
-        elapsed = token_end - token_begin
-        print(termcolor.colored(f'ITL(Inter-token Latency) {token_num / elapsed:.3f}', "yellow"), flush=True)
-        messages += parser.messages
-
+    lines = get_file_lines_with_random("promt.txt")
+    once_inference(lines[0], messages, encoding, generator) 
+    once_inference(lines[1], messages, encoding, generator) 
+    for promt_file in ["promt_zh.txt", "promt.txt"]:
+        lines = get_file_lines_with_random("promt.txt")
+        time_sum = 0
+        token_sum = 0
+        for user_message in lines:
+            token_begin = time.perf_counter()
+            token_num = once_inference(user_message, messages, encoding, generator) 
+            token_end = time.perf_counter()
+            elapsed = token_end - token_begin
+            token_sum += token_num
+            time_sum += elapsed
+            print(termcolor.colored(f'ITL(Inter-token Latency) {token_num / elapsed:.3f}', "yellow"), flush=True)
+        print(termcolor.colored(f'{promt_file} AVG ITL(Inter-token Latency) {token_sum / time_sum:.3f}', "yellow"), flush=True)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
