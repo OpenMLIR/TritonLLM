@@ -20,8 +20,6 @@ def _attn_fwd(
     V,
     Sinks,
     sm_scale,
-    M,
-    Out,  #
     Start_q,
     stride_qz,
     stride_qh,
@@ -35,10 +33,6 @@ def _attn_fwd(
     stride_vh,
     stride_vn,
     stride_vk,  #
-    stride_oz,
-    stride_oh,
-    stride_om,
-    stride_ok,  #
     Z,
     H,
     N_Q_CTX,
@@ -57,7 +51,6 @@ def _attn_fwd(
     q_offset = off_z.to(tl.int64) * stride_qz + off_h.to(tl.int64) * stride_qh
     k_offset = off_z.to(tl.int64) * stride_kz + off_h.to(tl.int64) * stride_kh
     v_offset = off_z.to(tl.int64) * stride_vz + off_h.to(tl.int64) * stride_vh
-    o_offset = off_z.to(tl.int64) * stride_oz + off_h.to(tl.int64) * stride_oh
 
     # block pointers
     Q_block_ptr = tl.make_block_ptr(
@@ -83,14 +76,6 @@ def _attn_fwd(
         offsets=(0, 0),
         block_shape=(HEAD_DIM, BLOCK_N),
         order=(0, 1),
-    )
-    O_block_ptr = tl.make_block_ptr(
-        base=Out + o_offset,
-        shape=(N_Q_CTX, HEAD_DIM),
-        strides=(stride_om, stride_ok),
-        offsets=(start_m * BLOCK_M, 0),
-        block_shape=(BLOCK_M, HEAD_DIM),
-        order=(1, 0),
     )
 
     # load attention sinks
@@ -129,7 +114,7 @@ def _attn_fwd(
             mask = mask | too_old
 
         k = tl.load(K_block_ptr)
-        qk = tl.dot(q, k, allow_tf32=False)
+        qk = tl.dot(q, k)
 
         qk = qk * qk_scale + tl.where(mask, -1.0e6, 0.0)
         m_ij = tl.maximum(m_i, tl.max(qk, 1))
@@ -140,8 +125,8 @@ def _attn_fwd(
         l_ij = tl.sum(p, 1)
         acc = acc * alpha[:, None]
 
-        v = tl.load(V_block_ptr).to(tl.float32)
-        acc = tl.dot(p, v, acc, allow_tf32=False)
+        v = tl.load(V_block_ptr)
+        acc = tl.dot(p.to(tl.bfloat16), v, acc)
 
         l_i = l_i * alpha + l_ij
         m_i = m_ij
@@ -153,9 +138,7 @@ def _attn_fwd(
     z = l_i + sink
     acc = acc / z[:, None]
     m_i += tl.math.log(l_i)
-    m_ptrs = M + off_hz * N_Q_CTX + offs_m
-    tl.store(m_ptrs, m_i)
-    tl.store(O_block_ptr, acc.to(Out.type.element_ty))
+    tl.store(Q_block_ptr, acc.to(tl.bfloat16))
 
 
 class _attention(torch.autograd.Function):
@@ -185,8 +168,8 @@ class _attention(torch.autograd.Function):
         k = torch.nn.functional.pad(k, (0, 0, 0, n_pad_size))
         v = torch.nn.functional.pad(v, (0, 0, 0, n_pad_size))
 
-        o = torch.empty_like(q)
-        M = torch.empty((bs, n_heads, n_ctx + m_pad_size), device=q.device, dtype=torch.float32)
+        # o = torch.empty_like(q)
+        # M = torch.empty((bs, n_heads, n_ctx + m_pad_size), device=q.device, dtype=torch.float32)
         grid = (triton.cdiv(n_ctx, BLOCK_M), bs * n_heads, 1)
         _attn_fwd[grid](
             q,
@@ -194,8 +177,6 @@ class _attention(torch.autograd.Function):
             v,
             sinks,
             sm_scale,
-            M,
-            o,  #
             start_q,
             q.stride(0),
             q.stride(1),
@@ -209,10 +190,6 @@ class _attention(torch.autograd.Function):
             v.stride(1),
             v.stride(2),
             v.stride(3),  #
-            o.stride(0),
-            o.stride(1),
-            o.stride(2),
-            o.stride(3),  #
             q.shape[0],
             q.shape[1],  #
             N_Q_CTX=n_ctx + m_pad_size,  #
@@ -222,14 +199,9 @@ class _attention(torch.autograd.Function):
             BLOCK_M=BLOCK_M,
             BLOCK_N=BLOCK_N,
         )
-
-        ctx.save_for_backward(q, k, v, sinks, o, M, start_q)
-        ctx.sm_scale = sm_scale
-        ctx.bandwidth = bandwidth
-
-        o = o[:, :, :n_ctx, :].transpose(1, 2).contiguous()
-        o = o.view(bs, n_ctx, n_heads * HEAD_DIM_V)
-        return o
+        q = q[:, :, :n_ctx, :].transpose(1, 2).contiguous()
+        q = q.view(bs, n_ctx, n_heads * HEAD_DIM_V)
+        return q
 
 
 attention = _attention.apply
@@ -300,3 +272,18 @@ def test_eq(batch_size, num_queries, num_keys, num_key_value_heads, num_key_valu
     o2 = attention_ref(q, k, v, sinks, sm_scale, sliding_window, start_q)
 
     torch.testing.assert_close(o1, o2)
+
+if __name__ == "__main__":
+    batch_size, num_queries, num_keys, num_key_value_heads, num_key_value_groups, head_dim, sm_scale, sliding_window, start_q = 1, 128, 128, 8, 8, 64, 0.125, None, 0
+    q = torch.randn(batch_size, num_queries, num_key_value_heads, num_key_value_groups, head_dim).bfloat16().cuda()
+    k = torch.randn(batch_size, num_keys, num_key_value_heads, head_dim).bfloat16().cuda()
+    v = torch.randn(batch_size, num_keys, num_key_value_heads, head_dim).bfloat16().cuda()
+    sinks = torch.randn(num_key_value_heads * num_key_value_groups).bfloat16().cuda()
+
+    start_q = torch.tensor([start_q], dtype=torch.int32).cuda()
+
+    o1 = attention(q, k, v, sinks, sm_scale, sliding_window, start_q)
+    o2 = attention_ref(q, k, v, sinks, sm_scale, sliding_window, start_q)
+
+    torch.testing.assert_close(o1, o2, rtol=1e-2, atol=1e-2)
+    print(o1)
