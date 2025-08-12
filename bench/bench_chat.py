@@ -8,6 +8,7 @@ import asyncio
 import datetime
 import os
 import time
+import random
 
 from pathlib import Path
 
@@ -99,6 +100,12 @@ def once_inference(user_message, messages, encoding, generator):
     # has 10 parser.last_content_delta
     return token_num - 10
 
+def get_file_lines_with_random(file_name):
+    with open("bench/promt.txt", "r", encoding="utf-8") as f:
+        lines = f.read().splitlines()
+    random.shuffle(lines)
+    return lines
+
 def main(args):
     from gpt_oss.triton.model import TokenGenerator as TritonGenerator
     device = torch.device(f"cuda:0")
@@ -177,23 +184,22 @@ def main(args):
 
     # Print the system message and the user message start
     MESSAGE_PADDING = 12
-    with open("bench/promt.txt", "r", encoding="utf-8") as f:
-        lines = f.read().splitlines()
-    import random
-    random.shuffle(lines)
+    lines = get_file_lines_with_random("promt.txt")
     once_inference(lines[0], messages, encoding, generator) 
     once_inference(lines[1], messages, encoding, generator) 
-    time_sum = 0
-    token_sum = 0
-    for user_message in lines:
-        token_begin = time.perf_counter()
-        token_num = once_inference(user_message, messages, encoding, generator) 
-        token_end = time.perf_counter()
-        elapsed = token_end - token_begin
-        token_sum += token_num
-        time_sum += elapsed
-        print(termcolor.colored(f'ITL(Inter-token Latency) {token_num / elapsed:.3f}', "yellow"), flush=True)
-    print(termcolor.colored(f'AVG ITL(Inter-token Latency) {token_sum / time_sum:.3f}', "yellow"), flush=True)
+    for promt_file in ["promt_zh.txt", "promt.txt"]:
+        lines = get_file_lines_with_random("promt.txt")
+        time_sum = 0
+        token_sum = 0
+        for user_message in lines:
+            token_begin = time.perf_counter()
+            token_num = once_inference(user_message, messages, encoding, generator) 
+            token_end = time.perf_counter()
+            elapsed = token_end - token_begin
+            token_sum += token_num
+            time_sum += elapsed
+            print(termcolor.colored(f'ITL(Inter-token Latency) {token_num / elapsed:.3f}', "yellow"), flush=True)
+        print(termcolor.colored(f'{promt_file} AVG ITL(Inter-token Latency) {token_sum / time_sum:.3f}', "yellow"), flush=True)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
