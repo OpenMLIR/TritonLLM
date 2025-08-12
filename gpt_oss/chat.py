@@ -7,6 +7,8 @@ import argparse
 import asyncio
 import datetime
 import os
+import time
+
 from pathlib import Path
 
 try:
@@ -15,12 +17,14 @@ except ImportError:
     import readline
 
 import torch
+import torch.distributed as dist
 import termcolor
 
 from gpt_oss.tools import apply_patch
 from gpt_oss.tools.simple_browser import SimpleBrowserTool
 from gpt_oss.tools.simple_browser.backend import ExaBackend
 from gpt_oss.tools.python_docker.docker_tool import PythonTool
+from gpt_oss.tokenizer import get_tokenizer
 
 from openai_harmony import (
     Author,
@@ -60,8 +64,8 @@ def get_user_input():
 
 def main(args):
     from gpt_oss.triton.model import TokenGenerator as TritonGenerator
-    from gpt_oss.torch.utils import init_distributed
-    device = init_distributed()
+    device = torch.device(f"cuda:0")
+    tokenizer = get_tokenizer()
     generator = TritonGenerator(args.checkpoint, args.context, device)
 
     encoding = load_harmony_encoding(HarmonyEncodingName.HARMONY_GPT_OSS)
@@ -231,7 +235,10 @@ def main(args):
         field_created = False
         current_output_text = ""
         output_text_delta_buffer = ""
+        token_begin = time.perf_counter()
+        token_num = 0
         for predicted_token in generator.generate(tokens, encoding.stop_tokens_for_assistant_actions()):
+            token_num += 1
             parser.process(predicted_token)
             if args.raw:
                 print(encoding.decode([predicted_token]), end="", flush=True)
@@ -264,7 +271,12 @@ def main(args):
                 print(output_text_delta_buffer, end="", flush=True)
                 current_output_text += output_text_delta_buffer
                 output_text_delta_buffer = ""
-
+        # token_num = len(tokenizer.encode(current_output_text))
+        # has 10 parser.last_content_delta
+        token_num -=  10
+        token_end = time.perf_counter()
+        elapsed = token_end - token_begin
+        print(termcolor.colored(f'ITL(Inter-token Latency) {token_num / elapsed:.3f}', "yellow"), flush=True)
         messages += parser.messages
 
 
