@@ -4,7 +4,7 @@
 
 将针对**RTX 5090**(Blackwell)进行优化。
 
-## 支持的 GPU（按 Compute Capability）
+## 支持的 GPU
 
 - **sm120**：RTX 5090、RTX PRO 6000 等  
 - **sm90**：H100、H200、H20 等  
@@ -49,7 +49,7 @@ export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 python -m gpt_oss.chat gpt-oss-20b/original/
 ```
 
-## 网页版运行
+## 网页版运行(待修复)
 
 你同样可以使用 streamlit 通过调用 Responses API 来使用这个项目，网页更加直观，且方便共享。
 
