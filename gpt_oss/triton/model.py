@@ -9,6 +9,7 @@ from torch.profiler import record_function
 from gpt_oss.triton.weights import Checkpoint
 from gpt_oss.triton.attention import attention, attention_ref
 from gpt_oss.triton.moe import quantize_mx4, moe
+from gpt_oss.triton.triton_kernels import rmsnorm_forward
 
 @dataclass
 class ModelConfig:
@@ -40,11 +41,9 @@ class RMSNorm(torch.nn.Module):
             torch.ones(num_features, device=device, dtype=torch.float32)
         )
 
+    @record_function("rmsnorm")
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        assert x.shape[-1] == self.num_features
-        t, dtype = x.float(), x.dtype
-        t = t * torch.rsqrt(torch.mean(t**2, dim=-1, keepdim=True) + self.eps)
-        return (t * self.scale).to(dtype)
+        return rmsnorm_forward(x, self.scale, self.eps)
 
 
 class RotaryEmbedding(torch.nn.Module):
