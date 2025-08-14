@@ -7,6 +7,7 @@ implements modular Triton-backed LLM inference with an emphasis on kernel optimi
 ## Installation
 
 ```bash
+pip install torch==2.8.0
 git clone https://github.com/OpenMLIR/triton_llm
 cd triton_llm
 pip install -e .[triton]

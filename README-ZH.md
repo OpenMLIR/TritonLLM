@@ -20,6 +20,7 @@
 ## 安装
 
 ```bash
+pip install torch==2.8.0
 git clone https://github.com/OpenMLIR/triton_llm
 cd triton_llm
 pip install -e .[triton]
