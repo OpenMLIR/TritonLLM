@@ -2,33 +2,15 @@
 Harmony chat with tools
 """
 
-import atexit
 import argparse
-import asyncio
 import datetime
-import os
 import time
-import random
 
-from pathlib import Path
-
-try:
-    import gnureadline as readline
-except ImportError:
-    import readline
 
 import torch
-import torch.distributed as dist
 import termcolor
 
-from gpt_oss.tools import apply_patch
-from gpt_oss.tools.simple_browser import SimpleBrowserTool
-from gpt_oss.tools.simple_browser.backend import ExaBackend
-from gpt_oss.tools.python_docker.docker_tool import PythonTool
-from gpt_oss.tokenizer import get_tokenizer
-
 from openai_harmony import (
-    Author,
     Conversation,
     DeveloperContent,
     HarmonyEncodingName,
@@ -38,8 +20,6 @@ from openai_harmony import (
     StreamableParser,
     StreamState,
     SystemContent,
-    TextContent,
-    ToolDescription,
     load_harmony_encoding,
 )
 
@@ -50,28 +30,65 @@ REASONING_EFFORT = {
     "low": ReasoningEffort.LOW,
 }
 
+
 def once_inference(user_message, messages, encoding, generator):
+    MESSAGE_PADDING = 12
+    print(termcolor.colored("User:".ljust(MESSAGE_PADDING), "red"), flush=True)
+    print(user_message)
     user_message = Message.from_role_and_content(Role.USER, user_message)
     messages.append(user_message)
-
     conversation = Conversation.from_messages(messages)
-    tokens = encoding.render_conversation_for_completion(
-        conversation, Role.ASSISTANT
-    )
+    tokens = encoding.render_conversation_for_completion(conversation, Role.ASSISTANT)
+    parser = StreamableParser(encoding, role=Role.ASSISTANT)
+    current_output_text = ""
+    output_text_delta_buffer = ""
+    field_created = False
+    token_begin = time.perf_counter()
     token_num = 0
-    for predicted_token in generator.generate(tokens, encoding.stop_tokens_for_assistant_actions()):
+    for predicted_token in generator.generate(
+        tokens, encoding.stop_tokens_for_assistant_actions()
+    ):
         token_num += 1
+        parser.process(predicted_token)
+
+        if parser.state == StreamState.EXPECT_START:
+            print("")  # new line
+            field_created = False
+
+        if not parser.last_content_delta:
+            continue
+
+        if not field_created:
+            field_created = True
+            if parser.current_channel == "final":
+                print(termcolor.colored("Assistant:", "green"), flush=True)
+            else:
+                print(termcolor.colored("CoT:", "yellow"), flush=True)
+        output_text_delta_buffer += parser.last_content_delta
+        print(output_text_delta_buffer, end="", flush=True)
+        current_output_text += output_text_delta_buffer
+        output_text_delta_buffer = ""
     # has 10 parser.last_content_delta
-    return token_num - 10
+    token_num -=  10
+    token_end = time.perf_counter()
+    elapsed = token_end - token_begin
+    print(termcolor.colored(f'ITL(Inter-token Latency) {token_num / elapsed:.3f}\n\n', "yellow"), flush=True)
+
 
 def get_file_lines_with_random(file_name):
     with open(f"bench/{file_name}", "r", encoding="utf-8") as f:
         lines = f.read().splitlines()
-    random.shuffle(lines)
     return lines
+
+
+def get_eval_content():
+    with open(f"bench/eval.txt", "r", encoding="utf-8") as f:
+        return f.read()
+
 
 def main(args):
     from gpt_oss.triton.model import TokenGenerator as TritonGenerator
+
     device = torch.device(f"cuda:0")
     generator = TritonGenerator(args.checkpoint, args.context, device)
 
@@ -84,38 +101,45 @@ def main(args):
     )
 
     system_message = Message.from_role_and_content(Role.SYSTEM, system_message_content)
-    messages = [system_message]
-
-    developer_message_content = DeveloperContent.new().with_instructions(args.developer_message)
-    messages.append(Message.from_role_and_content(Role.DEVELOPER, developer_message_content))
 
     # System message
     print(termcolor.colored("System Message:", "cyan"), flush=True)
-    print(termcolor.colored("Model Identity:", "cyan"), system_message_content.model_identity, flush=True)
-    print(termcolor.colored("Reasoning Effort:", "cyan"), system_message_content.reasoning_effort, flush=True)
-    print(termcolor.colored("Conversation Start Date:", "cyan"), system_message_content.conversation_start_date, flush=True)
-    print(termcolor.colored("Knowledge Cutoff:", "cyan"), system_message_content.knowledge_cutoff, flush=True)
+    print(
+        termcolor.colored("Model Identity:", "cyan"),
+        system_message_content.model_identity,
+        flush=True,
+    )
+    print(
+        termcolor.colored("Reasoning Effort:", "cyan"),
+        system_message_content.reasoning_effort,
+        flush=True,
+    )
+    print(
+        termcolor.colored("Conversation Start Date:", "cyan"),
+        system_message_content.conversation_start_date,
+        flush=True,
+    )
+    print(
+        termcolor.colored("Knowledge Cutoff:", "cyan"),
+        system_message_content.knowledge_cutoff,
+        flush=True,
+    )
     # Developer message
     print(termcolor.colored("Developer Message:", "yellow"), flush=True)
-    print(developer_message_content.instructions, flush=True)
 
+    output_text = ""
     file_lst = ["prompt_zh.txt", "prompt.txt"]
-    lines = get_file_lines_with_random(file_lst[1])
-    once_inference(lines[0], messages, encoding, generator) 
-    once_inference(lines[1], messages, encoding, generator) 
     for prompt_file in file_lst:
         lines = get_file_lines_with_random(prompt_file)
-        time_sum, token_sum = 0, 0
         for user_message in lines:
-            token_begin = time.perf_counter()
             messages = [system_message]
-            developer_message_content = DeveloperContent.new().with_instructions(args.developer_message)
-            messages.append(Message.from_role_and_content(Role.DEVELOPER, developer_message_content))
-            token_num = once_inference(user_message, messages, encoding, generator) 
-            elapsed = time.perf_counter() - token_begin
-            time_sum, token_sum = time_sum + elapsed, token_sum + token_num
-            print(termcolor.colored(f'ITL(Inter-token Latency) {token_num / elapsed:.3f}', "yellow"), flush=True)
-        print(termcolor.colored(f'{prompt_file} AVG ITL(Inter-token Latency) {token_sum / time_sum:.3f}', "yellow"), flush=True)
+            developer_message_content = DeveloperContent.new().with_instructions(
+                args.developer_message
+            )
+            messages.append(
+                Message.from_role_and_content(Role.DEVELOPER, developer_message_content)
+            )
+            once_inference(user_message, messages, encoding, generator)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(

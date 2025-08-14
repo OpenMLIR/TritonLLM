@@ -7,6 +7,7 @@ implements modular Triton-backed LLM inference with an emphasis on kernel optimi
 ## Installation
 
 ```bash
+pip install torch==2.8.0
 git clone https://github.com/OpenMLIR/triton_llm
 cd triton_llm
 pip install -e .[triton]
@@ -32,7 +33,18 @@ export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 python -m gpt_oss.chat gpt-oss-20b/original/
 ```
 
-## Run use streamlit with Responses API
+## Benchmark
+
+I am currently optimizing **Inter-Token Latency (ITL)**, the average time for the model to generate each token during autoregressive decoding.
+
+```bash
+python -m bench.bench_chat gpt-oss-20b/original/
+
+# show output
+python -m bench.only_output gpt-oss-20b/original/
+```
+
+## Run use streamlit with Responses API(has bug)
 
 You can also use Streamlit to interact with the [Responses API](https://github.com/openai/gpt-oss?tab=readme-ov-file#responses-api), providing a convenient web interface for managing the project.
 

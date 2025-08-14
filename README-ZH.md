@@ -4,7 +4,7 @@
 
 将针对**RTX 5090**(Blackwell)进行优化。
 
-## 支持的 GPU（按 Compute Capability）
+## 支持的 GPU
 
 - **sm120**：RTX 5090、RTX PRO 6000 等  
 - **sm90**：H100、H200、H20 等  
@@ -20,6 +20,7 @@
 ## 安装
 
 ```bash
+pip install torch==2.8.0
 git clone https://github.com/OpenMLIR/triton_llm
 cd triton_llm
 pip install -e .[triton]
@@ -49,7 +50,18 @@ export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 python -m gpt_oss.chat gpt-oss-20b/original/
 ```
 
-## 网页版运行
+## 性能
+
+我目前在尝试优化 **Inter-Token Latency(ITL)**，即生成每个输出 token 的时间间隔，用来评估模型的生成速度。
+
+```bash
+python -m bench.bench_chat gpt-oss-20b/original/
+
+# 展示输出，实验性质
+python -m bench.only_output gpt-oss-20b/original/
+```
+
+## 网页版运行(待修复)
 
 你同样可以使用 streamlit 通过调用 Responses API 来使用这个项目，网页更加直观，且方便共享。
 
