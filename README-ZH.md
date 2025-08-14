@@ -56,6 +56,9 @@ python -m gpt_oss.chat gpt-oss-20b/original/
 
 ```bash
 python -m bench.bench_chat gpt-oss-20b/original/
+
+# 展示输出，实验性质
+python -m bench.only_output gpt-oss-20b/original/
 ```
 
 ## 网页版运行(待修复)

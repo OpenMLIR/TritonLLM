@@ -18,6 +18,7 @@ from openai_harmony import (
     ReasoningEffort,
     Role,
     StreamableParser,
+    StreamState,
     SystemContent,
     load_harmony_encoding,
 )
@@ -31,6 +32,9 @@ REASONING_EFFORT = {
 
 
 def once_inference(user_message, messages, encoding, generator):
+    MESSAGE_PADDING = 12
+    print(termcolor.colored("User:".ljust(MESSAGE_PADDING), "red"), flush=True)
+    print(user_message)
     user_message = Message.from_role_and_content(Role.USER, user_message)
     messages.append(user_message)
     conversation = Conversation.from_messages(messages)
@@ -38,16 +42,37 @@ def once_inference(user_message, messages, encoding, generator):
     parser = StreamableParser(encoding, role=Role.ASSISTANT)
     current_output_text = ""
     output_text_delta_buffer = ""
+    field_created = False
+    token_begin = time.perf_counter()
+    token_num = 0
     for predicted_token in generator.generate(
         tokens, encoding.stop_tokens_for_assistant_actions()
     ):
+        token_num += 1
         parser.process(predicted_token)
+
+        if parser.state == StreamState.EXPECT_START:
+            print("")  # new line
+            field_created = False
+
         if not parser.last_content_delta:
             continue
+
+        if not field_created:
+            field_created = True
+            if parser.current_channel == "final":
+                print(termcolor.colored("Assistant:", "green"), flush=True)
+            else:
+                print(termcolor.colored("CoT:", "yellow"), flush=True)
         output_text_delta_buffer += parser.last_content_delta
         print(output_text_delta_buffer, end="", flush=True)
         current_output_text += output_text_delta_buffer
         output_text_delta_buffer = ""
+    # has 10 parser.last_content_delta
+    token_num -=  10
+    token_end = time.perf_counter()
+    elapsed = token_end - token_begin
+    print(termcolor.colored(f'ITL(Inter-token Latency) {token_num / elapsed:.3f}\n\n', "yellow"), flush=True)
 
 
 def get_file_lines_with_random(file_name):
@@ -132,7 +157,7 @@ if __name__ == "__main__":
         "--reasoning-effort",
         metavar="REASONING_EFFORT",
         type=str,
-        default="low",
+        default="high",
         choices=["high", "medium", "low"],
         help="Reasoning effort",
     )

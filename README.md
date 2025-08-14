@@ -39,6 +39,9 @@ I am currently optimizing **Inter-Token Latency (ITL)**, the average time for th
 
 ```bash
 python -m bench.bench_chat gpt-oss-20b/original/
+
+# show output
+python -m bench.only_output gpt-oss-20b/original/
 ```
 
 ## Run use streamlit with Responses API(has bug)
