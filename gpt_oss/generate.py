@@ -4,14 +4,14 @@
 # torchrun --nproc-per-node=4 -m gpt_oss.generate -p "why did the chicken cross the road?" model/
 
 import argparse
+import torch
 
 from gpt_oss.tokenizer import get_tokenizer
 
 
 def main(args):
-    from gpt_oss.torch.utils import init_distributed
     from gpt_oss.triton.model import TokenGenerator as TritonGenerator
-    device = init_distributed()
+    device = torch.device(f"cuda:0")
     generator = TritonGenerator(args.checkpoint, context=4096, device=device)
 
     tokenizer = get_tokenizer()
