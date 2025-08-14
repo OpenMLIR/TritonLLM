@@ -108,6 +108,9 @@ def main(args):
         time_sum, token_sum = 0, 0
         for user_message in lines:
             token_begin = time.perf_counter()
+            messages = [system_message]
+            developer_message_content = DeveloperContent.new().with_instructions(args.developer_message)
+            messages.append(Message.from_role_and_content(Role.DEVELOPER, developer_message_content))
             token_num = once_inference(user_message, messages, encoding, generator) 
             elapsed = time.perf_counter() - token_begin
             time_sum, token_sum = time_sum + elapsed, token_sum + token_num
