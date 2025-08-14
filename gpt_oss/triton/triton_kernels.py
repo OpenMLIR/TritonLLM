@@ -28,6 +28,79 @@ def rmsnorm_forward(x, scale, eps):
     remaining = 1
     for s in x.shape[:-1]:
         remaining *= s
-    grid = (remaining, triton.cdiv(last_dim, 128))
+    grid = lambda META: (remaining, triton.cdiv(last_dim, META['BLOCK_SIZE']))
     rmsnorm[grid](x, t, scale, last_dim, eps, BLOCK_SIZE=128)
     return t
+
+
+@triton.jit
+def rotate(
+    query_ptr,
+    key_ptr,
+    sin_ptr,
+    cos_ptr,
+    offset_ptr,
+    max_context_length,
+    num_tokens,
+    num_heads: tl.constexpr,
+    head_dim: tl.constexpr,
+    num_key_value_heads: tl.constexpr,
+    head_dim_div: tl.constexpr,
+    TILE_TOKENS: tl.constexpr,
+):
+    pid = tl.program_id(0)
+    pid_t = tl.program_id(1)
+    query_ptr += pid * num_tokens * num_heads * head_dim
+    key_ptr += pid * num_tokens * num_key_value_heads * head_dim
+    offs_token = pid_t * TILE_TOKENS + tl.arange(0, TILE_TOKENS)[:, None]
+    offset = tl.load(offset_ptr)
+    new_offs_token = (offs_token + offset) % max_context_length
+    offs_dim_div = tl.arange(0, head_dim_div)[None, :]
+    offs = new_offs_token * head_dim_div + offs_dim_div
+    sin_cos_mask = offs_token < num_tokens
+    sin = tl.load(sin_ptr + offs, mask=sin_cos_mask)
+    sin = sin[:, None, :]
+    cos = tl.load(cos_ptr + offs, mask=sin_cos_mask)
+    cos = cos[:, None, :]
+
+    offs_token = pid_t * TILE_TOKENS + tl.arange(0, TILE_TOKENS)[:, None, None]
+    offs_head = tl.arange(0, num_heads)[None, :, None]
+    offs_dim = tl.arange(0, head_dim_div)[None, None, :]
+    offs = offs_token * (num_heads * head_dim) + offs_head * head_dim + offs_dim
+    q_k_mask = offs_token < num_tokens
+    q1 = tl.load(query_ptr + offs, mask=q_k_mask)
+    q2 = tl.load(query_ptr + offs + head_dim_div, mask=q_k_mask)
+    o1 = q1 * cos - q2 * sin
+    o2 = q2 * cos + q1 * sin
+    tl.store(query_ptr + offs, o1, mask=q_k_mask)
+    tl.store(query_ptr + offs + head_dim_div, o2, mask=q_k_mask)
+    stride_0 = num_key_value_heads * head_dim
+    offs_num_key_value_heads = tl.arange(0, num_key_value_heads)[None, :, None]
+    offs = offs_token * stride_0 + offs_num_key_value_heads * head_dim + offs_dim
+
+    k1 = tl.load(key_ptr + offs, mask=q_k_mask)
+    k2 = tl.load(key_ptr + offs + head_dim_div, mask=q_k_mask)
+    o1 = k1 * cos - k2 * sin
+    o2 = k2 * cos + k1 * sin
+    tl.store(key_ptr + offs, o1, mask=q_k_mask)
+    tl.store(key_ptr + offs + head_dim_div, o2, mask=q_k_mask)
+
+def rope_forward(query, key, sin, cos, max_context_length, offset):
+    batch_size, num_tokens, num_heads, head_dim = query.shape
+    batch_size, num_tokens, num_key_value_heads, head_dim = key.shape
+
+    grid = lambda META: (batch_size, triton.cdiv(num_tokens, META['TILE_TOKENS']))
+    rotate[grid](
+        query,
+        key,
+        sin,
+        cos,
+        offset,
+        max_context_length,
+        num_tokens,
+        num_heads,
+        head_dim,
+        num_key_value_heads,
+        head_dim // 2,
+        TILE_TOKENS = 32,
+    )

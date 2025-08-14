@@ -9,7 +9,7 @@ from torch.profiler import record_function
 from gpt_oss.triton.weights import Checkpoint
 from gpt_oss.triton.attention import attention, attention_ref
 from gpt_oss.triton.moe import quantize_mx4, moe
-from gpt_oss.triton.triton_kernels import rmsnorm_forward
+from gpt_oss.triton.triton_kernels import rmsnorm_forward, rope_forward
 
 @dataclass
 class ModelConfig:
@@ -140,16 +140,7 @@ class RotaryEmbedding(torch.nn.Module):
         key: torch.Tensor,
         offset: torch.LongTensor,
     ) -> tuple[torch.Tensor, torch.Tensor]:
-        batch_size, num_tokens, num_heads, head_dim = query.shape
-        batch_size, num_tokens, num_key_value_heads, head_dim = key.shape
-
-        idx = torch.arange(num_tokens, device=query.device, dtype=torch.long) + offset
-        idx = idx % self.max_context_length
-        cos = self.cos.index_select(0, idx)
-        sin = self.sin.index_select(0, idx)
-
-        query = self._rotate(query, cos, sin)
-        key = self._rotate(key, cos, sin)
+        rope_forward(query, key, self.sin, self.cos, self.max_context_length, offset)
         return query, key
 
 
