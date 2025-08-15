@@ -114,8 +114,8 @@ def main(args):
             token_num = once_inference(user_message, messages, encoding, generator) 
             elapsed = time.perf_counter() - token_begin
             time_sum, token_sum = time_sum + elapsed, token_sum + token_num
-            print(termcolor.colored(f'ITL(Inter-token Latency) {token_num / elapsed:.3f}', "yellow"), flush=True)
-        print(termcolor.colored(f'{prompt_file} AVG ITL(Inter-token Latency) {token_sum / time_sum:.3f}', "yellow"), flush=True)
+            print(termcolor.colored(f'TPS(Tokens Per Second) {token_num / elapsed:.3f}', "yellow"), flush=True)
+        print(termcolor.colored(f'{prompt_file} AVG TPS(Tokens Per Second) {token_sum / time_sum:.3f}', "yellow"), flush=True)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(

@@ -203,7 +203,7 @@ def run(container):
             elapsed = token_end - token_begin
             tokenizer = get_tokenizer()
             tokens = tokenizer.encode(all_text[len(first_token):])
-            print(f'ITL(Inter-token Latency) {len(tokens) / elapsed:.3f}')
+            print(f'TPS(Tokens Per Second) {len(tokens) / elapsed:.3f}')
             print(f'TPOT(Time per Output Token) {elapsed / len(tokens):.3f} seconds')
             # print(datetime.now(), 'chat end')
             # print(text_delta)
