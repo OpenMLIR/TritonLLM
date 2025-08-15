@@ -72,7 +72,7 @@ def once_inference(user_message, messages, encoding, generator):
     token_num -=  10
     token_end = time.perf_counter()
     elapsed = token_end - token_begin
-    print(termcolor.colored(f'ITL(Inter-token Latency) {token_num / elapsed:.3f}\n\n', "yellow"), flush=True)
+    print(termcolor.colored(f'TPS(Tokens Per Second) {token_num / elapsed:.3f}\n\n', "yellow"), flush=True)
 
 
 def get_file_lines_with_random(file_name):

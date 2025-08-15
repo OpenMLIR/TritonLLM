@@ -52,7 +52,7 @@ python -m gpt_oss.chat gpt-oss-20b/original/
 
 ## 性能
 
-我目前在尝试优化 **Inter-Token Latency(ITL)**，即生成每个输出 token 的时间间隔，用来评估模型的生成速度。
+我目前在尝试优化 **Tokens Per Second**(TPS)，即每秒生成的Token数量，用来评估模型decode的生成速度。
 
 ```bash
 python -m bench.bench_chat gpt-oss-20b/original/

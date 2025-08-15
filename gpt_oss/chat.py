@@ -276,7 +276,7 @@ def main(args):
         token_num -=  10
         token_end = time.perf_counter()
         elapsed = token_end - token_begin
-        print(termcolor.colored(f'ITL(Inter-token Latency) {token_num / elapsed:.3f}', "yellow"), flush=True)
+        print(termcolor.colored(f'TPS(Tokens Per Second) {token_num / elapsed:.3f}', "yellow"), flush=True)
         messages += parser.messages
 
 
