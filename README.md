@@ -1,16 +1,29 @@
-# triton_llm
+<h3 align="center">
+LLM Inference via Triton 🚀
+</h3>
 
-> Chinese Documentation - [中文文档](./README-ZH.md)
+<h4 align="center">
+Flexible and modular LLM inference for mini-batch
+</h4>
 
-implements modular Triton-backed LLM inference with an emphasis on kernel optimization using CUBINs. The initial target is the [gpt-oss](https://github.com/openai/gpt-oss) model, executed via [triton_runner](https://github.com/OpenMLIR/triton_runner) and will be tuned for **RTX 5090** (sm120). Now support an NVIDIA GPU with [compute capability](https://developer.nvidia.com/cuda-gpus) sm120(RTX 5090, RTX PRO 6000, etc.), sm90(H100, H200, H20, etc.), sm80(A800, A100), sm89(RTX 4090, RTX 6000, L40, etc.) and sm86(RTX 3090, A10, etc.). If the GPU memory is greater than or equal to **24 GB**, you can run the **gpt-oss-20b**; if it is greater than or equal to **80 GB**, you can run the **gpt-oss-120b**.
+<p align="center">
+<a href="https://tritonllm.top"><b>🔗 tritonllm.top</b></a>
+</p>
+
+<p align="center">
+<a ><b>English</b></a> | <a href="README.zh.md"><b>中文</b></a>
+</p>
+
+Implements modular Triton-backed LLM inference with an emphasis on kernel optimization using CUBINs. The initial target is the [gpt-oss](https://github.com/openai/gpt-oss) model, executed via [triton_runner](https://github.com/OpenMLIR/triton_runner) and will be tuned for **RTX 5090** (sm120). Now support an NVIDIA GPU with [compute capability](https://developer.nvidia.com/cuda-gpus) sm120(RTX 5090, RTX PRO 6000, etc.), sm90(H100, H200, H20, etc.), sm80(A800, A100), sm89(RTX 4090, RTX 6000, L40, etc.) and sm86(RTX 3090, A10, etc.). If the GPU memory is greater than or equal to **24 GB**, you can run the **gpt-oss-20b**; if it is greater than or equal to **80 GB**, you can run the **gpt-oss-120b**.
 
 ## Installation
 
 ```bash
 pip install torch==2.8.0
-git clone https://github.com/OpenMLIR/triton_llm
-cd triton_llm
-pip install -e .[triton]
+git clone https://github.com/OpenMLIR/tritonllm
+cd tritonllm
+
+pip install -e .
 pip install -e triton_kernels
 ```
 

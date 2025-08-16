@@ -1,4 +1,19 @@
-# triton_llm
+<h3 align="center">
+LLM Inference via Triton 🚀
+</h3>
+
+<h4 align="center">
+面向小批量低延迟的灵活模块化 LLM 推理
+</h4>
+
+<p align="center">
+<a href="https://tritonllm.top"><b>🔗 tritonllm.top</b></a>
+</p>
+
+<p align="center">
+<a href="README.md"><b>English</b></a> | <a><b>中文</b></a>
+</p>
+
 
 以 Triton 算子为核心的 LLM 推理，灵活且模块化。并以 [gpt-oss](https://github.com/openai/gpt-oss) 模型为起点，关注 Triton算子优化后的CUBIN二进制文件并使用[triton_runner](https://github.com/OpenMLIR/triton_runner)进行LLM推理。
 
@@ -20,10 +35,10 @@
 ## 安装
 
 ```bash
-pip install torch==2.8.0
-git clone https://github.com/OpenMLIR/triton_llm
-cd triton_llm
-pip install -e .[triton]
+git clone https://github.com/OpenMLIR/tritonllm
+cd tritonllm
+
+pip install -e .
 pip install -e triton_kernels
 ```
 

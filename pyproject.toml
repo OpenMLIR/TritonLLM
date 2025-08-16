@@ -17,13 +17,15 @@ dependencies = [
   "uvicorn>=0.35.0",
   "requests>=2.31.0",
   "termcolor",
+  "torch==2.8.0",
+  "triton==3.4.0",
+  "safetensors>=0.5.3"
 ]
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
-version = "0.0.1"
+version = "0.1.0"
 
 [project.optional-dependencies]
-triton = ["triton==3.4.0", "safetensors>=0.5.3"]
 test = ["pytest>=8.4.1", "httpx>=0.28.1"]
 
 [build-system]
