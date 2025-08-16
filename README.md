@@ -35,7 +35,7 @@ python -m gpt_oss.chat gpt-oss-20b/original/
 
 ## Benchmark
 
-I am currently optimizing ***Tokens Per Second**(TPS), the number of tokens generated per second during autoregressive decoding.
+I am currently optimizing **Tokens Per Second**(TPS), the number of tokens generated per second during autoregressive decoding.
 
 ```bash
 python -m bench.bench_chat gpt-oss-20b/original/

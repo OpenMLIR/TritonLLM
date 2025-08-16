@@ -75,4 +75,6 @@ streamlit run streamlit/streamlit_chat.py
 
 ## 项目文档
 
-[5090显卡+Triton，轻松玩转GPT-OSS-20B！](https://zhuanlan.zhihu.com/p/1936692690503865129)
+[Triton Kernel 优先：全新 LLM 推理方式(47e9dcb)](https://zhuanlan.zhihu.com/p/1939592984820691987)
+
+[5090显卡+Triton，轻松玩转GPT-OSS-20B！(6bb4b91)](https://zhuanlan.zhihu.com/p/1936692690503865129)
