@@ -39,7 +39,6 @@ git clone https://github.com/OpenMLIR/tritonllm
 cd tritonllm
 
 pip install -e .
-pip install -e triton_kernels
 ```
 
 ## 下载模型
