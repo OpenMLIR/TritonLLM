@@ -69,7 +69,7 @@ def get_model_with_checkpoint(checkpoint):
     return checkpoint
 
 
-def init():
+def init_env():
     tritonllm_bin_dir = os.path.join(Path(__file__).parent, "bin")
 
     sys.modules['triton_kernels'] = triton_kernels
