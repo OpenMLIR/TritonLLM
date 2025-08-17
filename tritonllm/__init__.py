@@ -14,8 +14,8 @@ import warnings
 warnings.filterwarnings("ignore", category=UserWarning, module="torch")
 
 from pathlib import Path
-triton_llm_bin = os.path.join(Path(__file__).parent, "bin")
-os.environ["TIKTOKEN_CACHE_DIR"] = triton_llm_bin
+tritonllm_bin_dir = os.path.join(Path(__file__).parent, "bin")
+os.environ["TIKTOKEN_CACHE_DIR"] = tritonllm_bin_dir
 
-from .utils import save_file_to_triton_llm_bin
-save_file_to_triton_llm_bin(triton_llm_bin)
+from .utils import save_file_to_tritonllm_bin_dir
+save_file_to_tritonllm_bin_dir(tritonllm_bin_dir)
