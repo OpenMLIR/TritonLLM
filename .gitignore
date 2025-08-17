@@ -43,3 +43,4 @@ triton_llm.egg-info/*
 triton_kernels/triton_kernels.egg-info/*
 gpt-oss-20b/*
 gpt-oss-120b/*
+tritonllm/bin/*

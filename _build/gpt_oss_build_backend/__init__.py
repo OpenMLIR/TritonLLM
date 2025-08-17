@@ -1,1 +1,0 @@
-"""In-tree PEP 517 backend package for gpt-oss.""" 

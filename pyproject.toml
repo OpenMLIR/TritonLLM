@@ -1,6 +1,6 @@
 [project]
 name = "triton_llm"
-description = "A collection of reference inference implementations for gpt-oss by OpenAI"
+description = "Flexible and modular LLM inference for mini-batch"
 
 dependencies = [
   "openai-harmony",
@@ -17,29 +17,29 @@ dependencies = [
   "uvicorn>=0.35.0",
   "requests>=2.31.0",
   "termcolor",
+  "torch==2.8.0",
+  "triton==3.4.0",
+  "safetensors>=0.5.3",
+  "pytest>=8.4.1",
 ]
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
-version = "0.0.1"
+version = "0.1.0"
+authors = [
+    { name = "Bob Huang", email = "git@bobhuang.xyz" },
+]
+license = "MIT" 
 
-[project.optional-dependencies]
-triton = ["triton==3.4.0", "safetensors>=0.5.3"]
-test = ["pytest>=8.4.1", "httpx>=0.28.1"]
+[project.urls]
+repository = "https://github.com/OpenMLIR/TritonLLM"
+homepage = "https://tritonllm.top"
 
 [build-system]
-requires = ["setuptools>=68"]
-build-backend = "gpt_oss_build_backend.backend"
-backend-path = ["_build"]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-packages = ["gpt_oss"]
+include-package-data = true
 
-[tool.scikit-build]
-cmake.source-dir = "." # pick up the root CMakeLists.txt
-cmake.args = [
-  "-DGPTOSS_BUILD_PYTHON=ON",
-  "-DCMAKE_BUILD_TYPE=Release",
-  "-DBUILD_SHARED_LIBS=OFF",
-]
-[tool.scikit-build.wheel]
-packages = ["gpt_oss"] # copy the whole Python package tree
+[tool.setuptools.packages.find]
+include = ["tritonllm*"]
