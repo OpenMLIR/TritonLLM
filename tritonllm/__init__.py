@@ -10,3 +10,10 @@ sys.modules['gpt_oss'] = gpt_oss_module
 
 import os
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
+
+import tritonllm as tllm
+triton_llm_bin = os.path.join(tllm.__path__[0], "bin")
+os.environ["TIKTOKEN_CACHE_DIR"] = triton_llm_bin
+
+from .utils import save_file_to_triton_llm_bin
+save_file_to_triton_llm_bin(triton_llm_bin)
