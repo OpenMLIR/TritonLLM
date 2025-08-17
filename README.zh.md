@@ -59,7 +59,6 @@ modelscope download openai-mirror/gpt-oss-20b  --include "original/*" --local_di
 # 测试
 python examples/generate.py gpt-oss-20b/original/
 
-export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 # 对话
 python examples/chat.py gpt-oss-20b/original/
 ```
