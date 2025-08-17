@@ -1,6 +1,8 @@
 import urllib.request
 import os
-from tritonllm import tritonllm_bin_dir
+import sys
+from tritonllm import gpt_oss, triton_kernels
+from pathlib import Path
 from typing import Any, Optional, Union
 import tempfile
 import hashlib
@@ -66,3 +68,15 @@ def get_model_with_checkpoint(checkpoint):
             return get_model(checkpoint)
     return checkpoint
 
+
+def init():
+    tritonllm_bin_dir = os.path.join(Path(__file__).parent, "bin")
+
+    sys.modules['triton_kernels'] = triton_kernels
+    sys.modules['gpt_oss'] = gpt_oss
+
+    os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
+    os.environ["TIKTOKEN_CACHE_DIR"] = tritonllm_bin_dir
+
+    # download o200k_base.tiktoken
+    save_file_to_tritonllm_bin_dir(tritonllm_bin_dir)
