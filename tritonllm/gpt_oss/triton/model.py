@@ -6,10 +6,10 @@ from dataclasses import dataclass
 import torch
 from torch.profiler import record_function
 
-from gpt_oss.triton.weights import Checkpoint
-from gpt_oss.triton.attention import attention, attention_ref
-from gpt_oss.triton.moe import quantize_mx4, moe
-from gpt_oss.triton.triton_kernels import rmsnorm_forward, rope_forward
+from tritonllm.gpt_oss.triton.weights import Checkpoint
+from tritonllm.gpt_oss.triton.attention import attention, attention_ref
+from tritonllm.gpt_oss.triton.moe import quantize_mx4, moe
+from tritonllm.gpt_oss.triton.triton_kernels import rmsnorm_forward, rope_forward
 
 @dataclass
 class ModelConfig:

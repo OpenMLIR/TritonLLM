@@ -20,11 +20,11 @@ import torch
 import torch.distributed as dist
 import termcolor
 
-from gpt_oss.tools import apply_patch
-from gpt_oss.tools.simple_browser import SimpleBrowserTool
-from gpt_oss.tools.simple_browser.backend import ExaBackend
-from gpt_oss.tools.python_docker.docker_tool import PythonTool
-from gpt_oss.tokenizer import get_tokenizer
+from tritonllm.gpt_oss.tools import apply_patch
+from tritonllm.gpt_oss.tools.simple_browser import SimpleBrowserTool
+from tritonllm.gpt_oss.tools.simple_browser.backend import ExaBackend
+from tritonllm.gpt_oss.tools.python_docker.docker_tool import PythonTool
+from tritonllm.gpt_oss.tokenizer import get_tokenizer
 
 from openai_harmony import (
     Author,
@@ -63,7 +63,7 @@ def get_user_input():
 
 
 def main(args):
-    from gpt_oss.triton.model import TokenGenerator as TritonGenerator
+    from .triton.model import TokenGenerator as TritonGenerator
     device = torch.device(f"cuda:0")
     tokenizer = get_tokenizer()
     generator = TritonGenerator(args.checkpoint, args.context, device)
