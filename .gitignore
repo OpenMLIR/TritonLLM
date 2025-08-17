@@ -39,8 +39,7 @@ cmake-build-*
 .DS_Store
 
 gpt_oss.egg-info/*
-triton_llm.egg-info/*
-triton_kernels/triton_kernels.egg-info/*
+tritonllm.egg-info/*
 gpt-oss-20b/*
 gpt-oss-120b/*
 tritonllm/bin/*

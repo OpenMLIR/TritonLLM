@@ -22,25 +22,27 @@ Implements modular Triton-backed LLM inference with an emphasis on kernel optimi
 git clone https://github.com/OpenMLIR/tritonllm
 cd tritonllm
 
-pip install -e .
+pip install .
 ```
 
-## Download model
+## example code
 
-```shell
-pip install -U huggingface_hub
-# or  ~/.local/bin/huggingface-cli, if warning `huggingface-cli: command not found`
-huggingface-cli download openai/gpt-oss-20b --include "original/*" --local-dir gpt-oss-20b/
+```Python
+from tritonllm.gpt_oss.chat import chat, get_parser_args
+
+
+if __name__ == "__main__":
+    chat(get_parser_args())
 ```
 
 ## Run
 
 ```shell
 # test
-python examples/generate.py gpt-oss-20b/original/
+python examples/generate.py
 
 # chat
-python examples/chat.py gpt-oss-20b/original/
+python examples/chat.py
 ```
 
 ## Benchmark
@@ -48,10 +50,10 @@ python examples/chat.py gpt-oss-20b/original/
 I am currently optimizing **Tokens Per Second**(TPS), the number of tokens generated per second during autoregressive decoding.
 
 ```shell
-python examples/bench_chat.py gpt-oss-20b/original/
+python examples/bench_chat.py
 
 # show output
-python examples/only_output.py gpt-oss-20b/original/
+python examples/only_output.py
 ```
 
 ## Run use streamlit with Responses API(has bug)

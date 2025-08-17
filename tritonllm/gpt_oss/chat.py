@@ -5,6 +5,7 @@ Harmony chat with tools
 import asyncio
 import datetime
 import time
+import argparse
 
 from pathlib import Path
 
@@ -16,6 +17,7 @@ from gpt_oss.tools.simple_browser import SimpleBrowserTool
 from gpt_oss.tools.simple_browser.backend import ExaBackend
 from gpt_oss.tools.python_docker.docker_tool import PythonTool
 from gpt_oss.tokenizer import get_tokenizer
+from tritonllm.utils import get_model_with_checkpoint
 
 from openai_harmony import (
     Author,
@@ -57,7 +59,8 @@ def chat(args):
     from .triton.model import TokenGenerator as TritonGenerator
     device = torch.device(f"cuda:0")
     tokenizer = get_tokenizer()
-    generator = TritonGenerator(args.checkpoint, args.context, device)
+    checkpoint = get_model_with_checkpoint(args.checkpoint)
+    generator = TritonGenerator(checkpoint, args.context, device)
 
     encoding = load_harmony_encoding(HarmonyEncodingName.HARMONY_GPT_OSS)
 
@@ -269,3 +272,72 @@ def chat(args):
         elapsed = token_end - token_begin
         print(termcolor.colored(f'TPS(Tokens Per Second) {token_num / elapsed:.3f}', "yellow"), flush=True)
         messages += parser.messages
+
+def get_parser_args():
+    parser = argparse.ArgumentParser(
+        description="Chat example",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    parser.add_argument(
+        "checkpoint",
+        metavar="FILE",
+        nargs="?",
+        default="20b",
+        type=str,
+        help="Path to the SafeTensors checkpoint (default: %(default)s with modelscope)"
+    )
+    parser.add_argument(
+        "-r",
+        "--reasoning-effort",
+        metavar="REASONING_EFFORT",
+        type=str,
+        default="low",
+        choices=["high", "medium", "low"],
+        help="Reasoning effort",
+    )
+    parser.add_argument(
+        "-a",
+        "--apply-patch",
+        action="store_true",
+        help="Make apply_patch function available to the model",
+    )
+    parser.add_argument(
+        "-b",
+        "--browser",
+        default=False,
+        action="store_true",
+        help="Use browser tool",
+    )
+    parser.add_argument(
+        "--show-browser-results",
+        default=False,
+        action="store_true",
+        help="Show browser results",
+    )
+    parser.add_argument(
+        "-p",
+        "--python",
+        default=False,
+        action="store_true",
+        help="Use python tool",
+    )
+    parser.add_argument(
+        "--developer-message",
+        default="",
+        help="Developer message",
+    )
+    parser.add_argument(
+        "-c",
+        "--context",
+        metavar="CONTEXT",
+        type=int,
+        default=8192,
+        help="Max context length",
+    )
+    parser.add_argument(
+        "--raw",
+        default=False,
+        action="store_true",
+        help="Raw mode (does not render Harmony encoding)",
+    )
+    return parser.parse_args()
