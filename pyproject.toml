@@ -18,12 +18,12 @@ dependencies = [
   "requests>=2.31.0",
   "termcolor",
   "torch>=2.7.0",
-  "triton>=3.3.1",
+  "triton==3.4.0",
   "safetensors>=0.5.3",
   "pytest>=8.4.1",
 ]
 readme = "README.md"
-requires-python = ">=3.12,<3.13"
+requires-python = ">=3.11,<3.14"
 version = "0.1.0"
 authors = [
     { name = "Bob Huang", email = "git@bobhuang.xyz" },

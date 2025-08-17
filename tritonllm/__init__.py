@@ -10,6 +10,9 @@ sys.modules['gpt_oss'] = gpt_oss
 import os
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
 
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning, module="torch")
+
 from pathlib import Path
 triton_llm_bin = os.path.join(Path(__file__).parent, "bin")
 os.environ["TIKTOKEN_CACHE_DIR"] = triton_llm_bin
