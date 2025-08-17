@@ -22,7 +22,7 @@ Implements modular Triton-backed LLM inference with an emphasis on kernel optimi
 git clone https://github.com/OpenMLIR/tritonllm
 cd tritonllm
 
-pip install -e .
+pip install .
 ```
 
 ## Download model

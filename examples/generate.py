@@ -1,6 +1,5 @@
-from tritonllm.gpt_oss.generate import generate, get_parser
+from tritonllm.gpt_oss.generate import generate, get_parser_args
 
 
 if __name__ == "__main__":
-    args = get_parser().parse_args()
-    generate(args)
+    generate(get_parser_args())

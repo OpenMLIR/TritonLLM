@@ -21,15 +21,15 @@ LLM Inference via Triton 🚀
 
 ## 支持的 GPU
 
-- **sm120**：RTX 5090、RTX PRO 6000 等  
-- **sm90**：H100、H200、H20 等  
-- **sm80**：A800、A100  
-- **sm89**：RTX 4090、RTX 6000、L40 等  
-- **sm86**：RTX 3090、A10 等  
+- **sm120**：RTX 5090、RTX PRO 6000 等
+- **sm90**：H100、H200、H20 等
+- **sm80**：A800、A100
+- **sm89**：RTX 4090、RTX 6000、L40 等
+- **sm86**：RTX 3090、A10 等
 
 ## 显存要求
 
-- 若 GPU 显存 **≥ 24 GB**，可运行 **gpt-oss-20b**。  
+- 若 GPU 显存 **≥ 24 GB**，可运行 **gpt-oss-20b**。
 - 若 GPU 显存 **≥ 80 GB**，可运行 **gpt-oss-120b**。
 
 ## 安装
@@ -38,7 +38,7 @@ LLM Inference via Triton 🚀
 git clone https://github.com/OpenMLIR/tritonllm
 cd tritonllm
 
-pip install -e .
+pip install .
 ```
 
 ## 下载模型

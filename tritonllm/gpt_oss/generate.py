@@ -26,7 +26,7 @@ def generate(args):
         print(decoded_token, end="")
     print()
 
-def get_parser():
+def get_parser_args():
     parser = argparse.ArgumentParser(description="Text generation example")
     parser.add_argument(
         "checkpoint",
@@ -58,5 +58,4 @@ def get_parser():
         default=0,
         help="Limit on the number of tokens (0 to disable)",
     )
-    return parser
-    
+    return parser.parse_args()

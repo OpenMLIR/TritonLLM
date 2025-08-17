@@ -1,10 +1,12 @@
 """
 Harmony chat with tools
 """
+print(">>> loading gpt_oss")
 
 import asyncio
 import datetime
 import time
+import argparse
 
 from pathlib import Path
 
@@ -270,7 +272,7 @@ def chat(args):
         print(termcolor.colored(f'TPS(Tokens Per Second) {token_num / elapsed:.3f}', "yellow"), flush=True)
         messages += parser.messages
 
-def get_parser():
+def get_parser_args():
     parser = argparse.ArgumentParser(
         description="Chat example",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -335,4 +337,4 @@ def get_parser():
         action="store_true",
         help="Raw mode (does not render Harmony encoding)",
     )
-    return parser
+    return parser.parse_args()
