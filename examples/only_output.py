@@ -4,11 +4,12 @@ import argparse
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run HarmonyChatTool")
     parser.add_argument(
-        "--model_path",
-        type=str,
+        "checkpoint",
+        nargs="?",
         default="gpt-oss-20b/original/",
-        help="Path to the model"
+        type=str,
+        help="Path to the SafeTensors checkpoint (default: %(default)s)"
     )
     args = parser.parse_args()
-    tool = HarmonyChatTool(args.model_path, reasoning_effort="high")
+    tool = HarmonyChatTool(args.checkpoint, reasoning_effort="high")
     result = tool.only_output()
