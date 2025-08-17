@@ -69,10 +69,10 @@ python examples/chat.py gpt-oss-20b/original/
 我目前在尝试优化 **Tokens Per Second**(TPS)，即每秒生成的Token数量，用来评估模型decode的生成速度。
 
 ```shell
-python -m bench.bench_chat gpt-oss-20b/original/
+python examples/bench_chat.py gpt-oss-20b/original/
 
 # 展示输出，实验性质
-python -m bench.only_output gpt-oss-20b/original/
+python examples/only_output.py gpt-oss-20b/original/
 ```
 
 ## 网页版运行(待修复)

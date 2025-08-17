@@ -21,12 +21,6 @@ import torch
 import torch.distributed as dist
 import termcolor
 
-from gpt_oss.tools import apply_patch
-from gpt_oss.tools.simple_browser import SimpleBrowserTool
-from gpt_oss.tools.simple_browser.backend import ExaBackend
-from gpt_oss.tools.python_docker.docker_tool import PythonTool
-from gpt_oss.tokenizer import get_tokenizer
-
 from openai_harmony import (
     Author,
     Conversation,
@@ -65,7 +59,10 @@ def once_inference(user_message, messages, encoding, generator):
     return token_num - 10
 
 def get_file_lines_with_random(file_name):
-    with open(f"bench/{file_name}", "r", encoding="utf-8") as f:
+    import tritonllm as tllm
+    import os
+    file_path = os.path.join(tllm.__path__[0], "bin", file_name)
+    with open(file_path, "r", encoding="utf-8") as f:
         lines = f.read().splitlines()
     random.shuffle(lines)
     return lines

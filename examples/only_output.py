@@ -76,18 +76,16 @@ def once_inference(user_message, messages, encoding, generator):
 
 
 def get_file_lines_with_random(file_name):
-    with open(f"bench/{file_name}", "r", encoding="utf-8") as f:
+    import tritonllm as tllm
+    import os
+    file_path = os.path.join(tllm.__path__[0], "bin", file_name)
+    with open(file_path, "r", encoding="utf-8") as f:
         lines = f.read().splitlines()
     return lines
 
 
-def get_eval_content():
-    with open(f"bench/eval.txt", "r", encoding="utf-8") as f:
-        return f.read()
-
-
 def main(args):
-    from gpt_oss.triton.model import TokenGenerator as TritonGenerator
+    from tritonllm.gpt_oss.triton.model import TokenGenerator as TritonGenerator
 
     device = torch.device(f"cuda:0")
     generator = TritonGenerator(args.checkpoint, args.context, device)

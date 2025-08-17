@@ -48,10 +48,10 @@ python examples/chat.py gpt-oss-20b/original/
 I am currently optimizing **Tokens Per Second**(TPS), the number of tokens generated per second during autoregressive decoding.
 
 ```shell
-python -m bench.bench_chat gpt-oss-20b/original/
+python examples/bench_chat.py gpt-oss-20b/original/
 
 # show output
-python -m bench.only_output gpt-oss-20b/original/
+python examples/only_output.py gpt-oss-20b/original/
 ```
 
 ## Run use streamlit with Responses API(has bug)
