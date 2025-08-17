@@ -7,12 +7,14 @@ import torch
 import argparse
 
 from gpt_oss.tokenizer import get_tokenizer
+from tritonllm.utils import get_model_with_checkpoint
 
 
 def generate(args):
     from gpt_oss.triton.model import TokenGenerator as TritonGenerator
     device = torch.device(f"cuda:0")
-    generator = TritonGenerator(args.checkpoint, context=4096, device=device)
+    checkpoint = get_model_with_checkpoint(args.checkpoint)
+    generator = TritonGenerator(checkpoint, context=4096, device=device)
 
     tokenizer = get_tokenizer()
     tokens = tokenizer.encode(args.prompt)
@@ -31,8 +33,10 @@ def get_parser_args():
     parser.add_argument(
         "checkpoint",
         metavar="FILE",
+        nargs="?",
+        default="20b",
         type=str,
-        help="Path to the SafeTensors checkpoint",
+        help="Path to the SafeTensors checkpoint (default: %(default)s with modelscope)"
     )
     parser.add_argument(
         "-p",

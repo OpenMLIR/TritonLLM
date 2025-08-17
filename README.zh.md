@@ -41,14 +41,14 @@ cd tritonllm
 pip install .
 ```
 
-## 下载模型
+## 样例
 
-[modelscope](https://www.modelscope.cn)很好用，速度也很快。下载120b模型请自行修改命令。
+```Python
+from tritonllm.gpt_oss.chat import chat, get_parser_args
 
-```shell
-pip install modelscope
 
-modelscope download openai-mirror/gpt-oss-20b  --include "original/*" --local_dir gpt-oss-20b/
+if __name__ == "__main__":
+    chat(get_parser_args())
 ```
 
 ## 运行
@@ -57,10 +57,10 @@ modelscope download openai-mirror/gpt-oss-20b  --include "original/*" --local_di
 
 ```shell
 # 测试
-python examples/generate.py gpt-oss-20b/original/
+python examples/generate.py
 
 # 对话
-python examples/chat.py gpt-oss-20b/original/
+python examples/chat.py
 ```
 
 ## 性能
@@ -68,10 +68,10 @@ python examples/chat.py gpt-oss-20b/original/
 我目前在尝试优化 **Tokens Per Second**(TPS)，即每秒生成的Token数量，用来评估模型decode的生成速度。
 
 ```shell
-python examples/bench_chat.py gpt-oss-20b/original/
+python examples/bench_chat.py
 
 # 展示输出，实验性质
-python examples/only_output.py gpt-oss-20b/original/
+python examples/only_output.py
 ```
 
 ## 网页版运行(待修复)

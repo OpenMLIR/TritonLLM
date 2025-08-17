@@ -1,7 +1,6 @@
 """
 Harmony chat with tools
 """
-print(">>> loading gpt_oss")
 
 import asyncio
 import datetime
@@ -18,6 +17,7 @@ from gpt_oss.tools.simple_browser import SimpleBrowserTool
 from gpt_oss.tools.simple_browser.backend import ExaBackend
 from gpt_oss.tools.python_docker.docker_tool import PythonTool
 from gpt_oss.tokenizer import get_tokenizer
+from tritonllm.utils import get_model_with_checkpoint
 
 from openai_harmony import (
     Author,
@@ -59,7 +59,8 @@ def chat(args):
     from .triton.model import TokenGenerator as TritonGenerator
     device = torch.device(f"cuda:0")
     tokenizer = get_tokenizer()
-    generator = TritonGenerator(args.checkpoint, args.context, device)
+    checkpoint = get_model_with_checkpoint(args.checkpoint)
+    generator = TritonGenerator(checkpoint, args.context, device)
 
     encoding = load_harmony_encoding(HarmonyEncodingName.HARMONY_GPT_OSS)
 
@@ -280,8 +281,10 @@ def get_parser_args():
     parser.add_argument(
         "checkpoint",
         metavar="FILE",
+        nargs="?",
+        default="20b",
         type=str,
-        help="Path to the SafeTensors checkpoint",
+        help="Path to the SafeTensors checkpoint (default: %(default)s with modelscope)"
     )
     parser.add_argument(
         "-r",

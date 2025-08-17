@@ -120,7 +120,6 @@ class HarmonyChatTool:
             print(termcolor.colored("✓ Tokenizer loaded successfully", "green"), flush=True)
 
         # Initialize generator with loading message
-        print(termcolor.colored("Loading model checkpoint...", "yellow"), flush=True)
         try:
             from tritonllm.gpt_oss.triton.model import TokenGenerator as TritonGenerator
             self.generator = TritonGenerator(self.checkpoint_path, self.context_length, self.device)

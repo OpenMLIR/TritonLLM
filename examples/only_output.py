@@ -1,4 +1,5 @@
 from tritonllm.gpt_oss.bench import HarmonyChatTool
+from tritonllm.utils import get_model_with_checkpoint
 import argparse
 
 if __name__ == "__main__":
@@ -6,10 +7,11 @@ if __name__ == "__main__":
     parser.add_argument(
         "checkpoint",
         nargs="?",
-        default="gpt-oss-20b/original/",
+        default="20b",
         type=str,
-        help="Path to the SafeTensors checkpoint (default: %(default)s)"
+        help="Path to the SafeTensors checkpoint (default: %(default)s with modelscope)"
     )
     args = parser.parse_args()
-    tool = HarmonyChatTool(args.checkpoint, reasoning_effort="high")
+    checkpoint = get_model_with_checkpoint(args.checkpoint)
+    tool = HarmonyChatTool(checkpoint, reasoning_effort="high")
     result = tool.only_output()

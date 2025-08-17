@@ -55,4 +55,14 @@ def get_model(size_str) -> str:
             model_id=pretrained_model_name_or_path,
             allow_patterns=["original/*"],
         )
-        return model_path
+        return os.path.join(model_path, "original")
+
+
+def get_model_with_checkpoint(checkpoint):
+    if not os.path.isfile(checkpoint):
+        if checkpoint == "":
+            return get_model("20b")
+        else:
+            return get_model(checkpoint)
+    return checkpoint
+

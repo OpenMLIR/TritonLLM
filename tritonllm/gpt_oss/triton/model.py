@@ -1,6 +1,7 @@
 import json
 import math
 import os
+import termcolor
 from dataclasses import dataclass
 
 import torch
@@ -500,6 +501,7 @@ class TokenGenerator:
     @torch.inference_mode()
     def __init__(self, checkpoint: str, context: int, device: torch.device):
         self.device = device
+        print(termcolor.colored("Loading model checkpoint...", "yellow"), flush=True)
         self.model = Transformer.from_checkpoint(checkpoint, device=self.device)
         self.caches = [Cache(1, context, self.model.config.num_key_value_heads, device=self.device) for _ in range(len(self.model.block))]
         self.input_token = torch.zeros(1, dtype=torch.int32, device=self.device)
