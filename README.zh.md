@@ -34,7 +34,7 @@ LLM Inference via Triton 🚀
 
 ## 安装
 
-```bash
+```shell
 git clone https://github.com/OpenMLIR/tritonllm
 cd tritonllm
 
@@ -45,7 +45,7 @@ pip install -e .
 
 [modelscope](https://www.modelscope.cn)很好用，速度也很快。下载120b模型请自行修改命令。
 
-```bash
+```shell
 pip install modelscope
 
 modelscope download openai-mirror/gpt-oss-20b  --include "original/*" --local_dir gpt-oss-20b/
@@ -55,7 +55,7 @@ modelscope download openai-mirror/gpt-oss-20b  --include "original/*" --local_di
 
 使用120b模型请自行修改命令。
 
-```bash
+```shell
 # 测试
 python examples/generate.py gpt-oss-20b/original/
 
@@ -68,7 +68,7 @@ python examples/chat.py gpt-oss-20b/original/
 
 我目前在尝试优化 **Tokens Per Second**(TPS)，即每秒生成的Token数量，用来评估模型decode的生成速度。
 
-```bash
+```shell
 python -m bench.bench_chat gpt-oss-20b/original/
 
 # 展示输出，实验性质
@@ -79,7 +79,7 @@ python -m bench.only_output gpt-oss-20b/original/
 
 你同样可以使用 streamlit 通过调用 Responses API 来使用这个项目，网页更加直观，且方便共享。
 
-```bash
+```shell
 pip install streamlit
 
 python -m gpt_oss.responses_api.serve

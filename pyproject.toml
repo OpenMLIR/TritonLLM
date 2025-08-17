@@ -19,7 +19,8 @@ dependencies = [
   "termcolor",
   "torch==2.8.0",
   "triton==3.4.0",
-  "safetensors>=0.5.3"
+  "safetensors>=0.5.3",
+  "pytest>=8.4.1",
 ]
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
@@ -32,9 +33,6 @@ license = "MIT"
 [project.urls]
 repository = "https://github.com/OpenMLIR/TritonLLM"
 homepage = "https://tritonllm.top"
-
-[project.optional-dependencies]
-test = ["pytest>=8.4.1", "httpx>=0.28.1"]
 
 [build-system]
 requires = ["setuptools>=61.0"]
