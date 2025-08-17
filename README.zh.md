@@ -57,11 +57,11 @@ modelscope download openai-mirror/gpt-oss-20b  --include "original/*" --local_di
 
 ```bash
 # 测试
-python -m gpt_oss.generate gpt-oss-20b/original/
+python examples/generate.py gpt-oss-20b/original/
 
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 # 对话
-python -m gpt_oss.chat gpt-oss-20b/original/
+python examples/chat.py gpt-oss-20b/original/
 ```
 
 ## 性能

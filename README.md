@@ -37,11 +37,10 @@ huggingface-cli download openai/gpt-oss-20b --include "original/*" --local-dir g
 
 ```bash
 # test
-python -m gpt_oss.generate gpt-oss-20b/original/
+python examples/generate.py gpt-oss-20b/original/
 
-export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 # chat
-python -m gpt_oss.chat gpt-oss-20b/original/
+python examples/chat.py gpt-oss-20b/original/
 ```
 
 ## Benchmark

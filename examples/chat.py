@@ -1,6 +1,6 @@
 import argparse
 
-from tritonllm.gpt_oss.chat import main
+from tritonllm.gpt_oss.chat import chat
 
 
 if __name__ == "__main__":
@@ -69,4 +69,5 @@ if __name__ == "__main__":
         help="Raw mode (does not render Harmony encoding)",
     )
     args = parser.parse_args()
-    main(args)
+
+    chat(args)

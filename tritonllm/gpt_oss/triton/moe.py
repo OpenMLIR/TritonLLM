@@ -1,15 +1,15 @@
 import torch
 from torch.profiler import record_function
 
-from tritonllm.triton_kernels.swiglu import swiglu_fn
-from tritonllm.triton_kernels.numerics_details.mxfp import downcast_to_mxfp
-from tritonllm.triton_kernels.matmul_ogs import PrecisionConfig, FlexCtx, FnSpecs, FusedActivation
-from tritonllm.triton_kernels.matmul_ogs import matmul_ogs
-from tritonllm.triton_kernels.numerics import InFlexData
-from tritonllm.triton_kernels.routing import routing
-from tritonllm.triton_kernels.tensor import convert_layout
-from tritonllm.triton_kernels.tensor_details.layout import StridedLayout, HopperMXScaleLayout, HopperMXValueLayout
-from tritonllm.triton_kernels.tensor import wrap_torch_tensor, FP4
+from triton_kernels.swiglu import swiglu_fn
+from triton_kernels.numerics_details.mxfp import downcast_to_mxfp
+from triton_kernels.matmul_ogs import PrecisionConfig, FlexCtx, FnSpecs, FusedActivation
+from triton_kernels.matmul_ogs import matmul_ogs
+from triton_kernels.numerics import InFlexData
+from triton_kernels.routing import routing
+from triton_kernels.tensor import convert_layout
+from triton_kernels.tensor_details.layout import StridedLayout, HopperMXScaleLayout, HopperMXValueLayout
+from triton_kernels.tensor import wrap_torch_tensor, FP4
 
 
 def quantize_mx4(w):
