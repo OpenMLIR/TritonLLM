@@ -103,6 +103,9 @@ def make_default_opt_flags_amd(
     num_stages = 2
     # AMD-specific
     target_kernel_kwargs = {"waves_per_eu": 0, "matrix_instr_nonkdim": 16, "kpack": 1}
+    epilogue_subtile = constraints.get('epilogue_subtile', None)
+    if epilogue_subtile is None:
+        epilogue_subtile = 1
     ret = OptFlags(
         block_m=block_m,
         block_n=block_n,
@@ -116,7 +119,7 @@ def make_default_opt_flags_amd(
         fused_scatter=constraints.get('fused_scatter', False),
         is_persistent=is_persistent,
         idle_sms=0,
-        epilogue_subtile=constraints.get('epilogue_subtile', None),
+        epilogue_subtile=epilogue_subtile,
         arch=None,
         target_kernel_kwargs=target_kernel_kwargs,
     )
@@ -157,15 +160,14 @@ def make_default_opt_flags_nvidia(
     elif enforce_bitwise_invariance:
         block_m = 128
     else:
-        min_block_m = 64 if torch.cuda.get_device_capability()[0] == 10 else 16
-        block_m = max(min_block_m, min(triton.next_power_of_2(tokens_per_expt), 128))
+        block_m = max(16, min(triton.next_power_of_2(tokens_per_expt), 128))
     # block n
     arch = None
     block_n = opt_flags_nvidia.compute_block_n(n, arch, precision_config)
     if cuda_capability_eq(8, 6):
         block_n = block_n // 2
     if cuda_capability_eq(12) and block_m == 16 and block_n == 256:
-        block_n //= 2
+        block_n = block_n // 2
     # is_persistent
     grid_size = opt_flags_nvidia.compute_grid_size(routing_data, m, n, block_m, block_n)
     n_sms = torch.cuda.get_device_properties(0).multi_processor_count
@@ -222,6 +224,7 @@ def make_default_opt_flags_nvidia(
     assert num_stages >= 1
     if constraints.get("num_stages", None):
         num_stages = constraints["num_stages"]
+
     # fused scatter scratchpad
     if constraints.get("fused_scatter", None) is not None:
         fused_scatter = constraints["fused_scatter"]
