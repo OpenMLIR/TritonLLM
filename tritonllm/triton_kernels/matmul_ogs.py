@@ -530,7 +530,7 @@ def matmul_ogs(x, w, bias,
     # launch kernel
     kernels = get_kernels(epilogue.specs, fused_activation.specs)
     if os.getenv("profile", "0") == "1":
-        print('DEBUG', x.shape[-2], N, K, opt_flags.block_m, opt_flags.block_n, opt_flags.block_k, opt_flags.group_m, file=open("a.txt","a"))
+        print('DEBUG', x.shape[-2], N, K, opt_flags.block_m, opt_flags.block_n, opt_flags.block_k, opt_flags.group_m, file=open("shape_tiling.txt","a"))
     (kernels._p_matmul_ogs if opt_flags.is_persistent else kernels._matmul_ogs)[(grid,)](
                    flex.out_data.reinterpret(memory["output"]),
                    flex.out_data.reinterpret(out0), *out0.stride(),
