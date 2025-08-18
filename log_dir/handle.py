@@ -16,8 +16,7 @@ for e in trace["traceEvents"]:
 # 按耗时排序
 events.sort(key=lambda x: x[1], reverse=True)
 
-# 打印前 30
-print("Top 10 ops by duration:")
-for name, dur in events[:30]:
-    name = name[:39] + "..." if len(name) > 39 else name
-    print(f"{name:<50} {dur:.3f} us")
+print("Top 50~80 ops by duration:")
+for name, dur in events[50:80]:
+    name = name[:50] + "..." if len(name) > 50 else name
+    print(f"{name:<55} {dur:.3f} us")
