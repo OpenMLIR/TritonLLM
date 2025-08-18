@@ -7,7 +7,6 @@ from typing import Any, Optional, Union
 import tempfile
 import hashlib
 import filelock
-from pathlib import Path
 
 def open_url(url):
     user_agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/119.0'
@@ -70,7 +69,7 @@ def get_model_with_checkpoint(checkpoint):
 
 
 def init_env():
-    tritonllm_bin_dir = os.path.join(Path(__file__).parent, "bin")
+    tritonllm_bin_dir = os.path.join(Path(gpt_oss.__file__).parent.parent, "bin")
 
     sys.modules['triton_kernels'] = triton_kernels
     sys.modules['gpt_oss'] = gpt_oss
