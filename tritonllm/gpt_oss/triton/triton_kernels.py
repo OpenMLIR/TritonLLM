@@ -4,7 +4,7 @@ import triton.language as tl
 
 
 @triton.jit
-def rmsnorm(x_ptr, t_ptr, scale_ptr, last_dim, eps, BLOCK_SIZE: tl.constexpr):
+def rmsnorm_kernel(x_ptr, t_ptr, scale_ptr, last_dim, eps, BLOCK_SIZE: tl.constexpr):
     row = tl.program_id(0)
     x_ptr = x_ptr + row * last_dim
     t_ptr = t_ptr + row * last_dim
@@ -29,12 +29,12 @@ def rmsnorm_forward(x, scale, eps):
     for s in x.shape[:-1]:
         remaining *= s
     grid = lambda META: (remaining, triton.cdiv(last_dim, META['BLOCK_SIZE']))
-    rmsnorm[grid](x, t, scale, last_dim, eps, BLOCK_SIZE=128)
+    rmsnorm_kernel[grid](x, t, scale, last_dim, eps, BLOCK_SIZE=128)
     return t
 
 
 @triton.jit
-def rotate(
+def rope_kernel(
     query_ptr,
     key_ptr,
     sin_ptr,
@@ -90,7 +90,7 @@ def rope_forward(query, key, sin, cos, max_context_length, offset):
     batch_size, num_tokens, num_key_value_heads, head_dim = key.shape
 
     grid = lambda META: (batch_size, triton.cdiv(num_tokens, META['TILE_TOKENS']))
-    rotate[grid](
+    rope_kernel[grid](
         query,
         key,
         sin,
@@ -102,5 +102,5 @@ def rope_forward(query, key, sin, cos, max_context_length, offset):
         head_dim,
         num_key_value_heads,
         head_dim // 2,
-        TILE_TOKENS = 32,
+        TILE_TOKENS = 1 if num_tokens < 60 else 32,
     )

@@ -43,5 +43,8 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools]
 include-package-data = true
 
+[tool.setuptools.package-data]
+"tritonllm" = ["*.txt"]
+
 [tool.setuptools.packages.find]
 include = ["tritonllm*"]

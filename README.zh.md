@@ -38,7 +38,7 @@ LLM Inference via Triton 🚀
 git clone https://github.com/OpenMLIR/tritonllm
 cd tritonllm
 
-pip install .
+pip install -e .
 ```
 
 ## 样例

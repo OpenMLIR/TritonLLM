@@ -90,8 +90,8 @@ class HarmonyChatTool:
     def get_file_lines(self, file_name: str, shuffle: bool = False) -> List[str]:
         """Load lines from file with optional shuffling"""
         try:
-            import tritonllm as tllm
-            file_path = os.path.join(tllm.__path__[0], "bin", file_name)
+            import tritonllm.gpt_oss as gpt_oss
+            file_path = os.path.join(Path(gpt_oss.__file__).parent.parent, "bin", file_name)
         except ImportError:
             # Fallback to current directory
             file_path = file_name

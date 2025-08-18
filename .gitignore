@@ -1,8 +1,6 @@
-# triton_llm builds
+# tritonllm builds
 build/
 build-*/
-
-src/triton_llm*.egg-info/
 
 # Pytest
 pytest.ini
