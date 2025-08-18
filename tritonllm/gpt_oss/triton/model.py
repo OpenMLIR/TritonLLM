@@ -6,6 +6,7 @@ from dataclasses import dataclass
 
 import torch
 from torch.profiler import record_function
+from torch.profiler import profile, record_function, ProfilerActivity
 
 from gpt_oss.triton.weights import Checkpoint
 from gpt_oss.triton.attention import attention, attention_ref
@@ -526,6 +527,32 @@ class TokenGenerator:
         self.model(prompt_tokens[None, :-1], self.caches)
         predicted_token = prompt_tokens[-1]
         num_generated_tokens = 0
+        if os.getenv("profile", "0") == "1":
+            with profile(
+                on_trace_ready=torch.profiler.tensorboard_trace_handler("./log_dir"),
+                activities=[torch.profiler.ProfilerActivity.CPU,
+                            torch.profiler.ProfilerActivity.CUDA],
+                record_shapes=True,
+                with_stack=True
+            ) as prof:
+                with record_function("model_inference"):
+                    self.input_token[0] = predicted_token
+                    self.graph.replay()
+                    if temperature == 0.0:
+                        predicted_token = torch.argmax(self.logits[-1, :], dim=-1).item()
+                    else:
+                        probs = torch.softmax(self.logits * (1.0 / temperature), dim=-1)
+                        predicted_token = torch.multinomial(probs[-1, :], num_samples=1).item()
+                    num_generated_tokens += 1
+
+                    if return_logprobs:
+                        logprobs = torch.log_softmax(self.logits[-1, :], dim=-1)
+                        selected_logprobs = logprobs[predicted_token].item()
+                        yield predicted_token, selected_logprobs
+                    else:
+                        yield predicted_token
+            return
+
         while max_tokens == 0 or num_generated_tokens < max_tokens:
             self.input_token[0] = predicted_token
             self.graph.replay()
