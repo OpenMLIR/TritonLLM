@@ -60,12 +60,14 @@ def get_model(size_str) -> str:
 
 
 def get_model_with_checkpoint(checkpoint):
-    if not os.path.isfile(checkpoint):
-        if checkpoint == "":
-            return get_model("20b")
-        else:
-            return get_model(checkpoint)
-    return checkpoint
+    if os.path.exists(checkpoint) and os.path.isdir(checkpoint) and any(
+        f.endswith(".safetensors") and os.path.isfile(os.path.join(checkpoint, f))
+        for f in os.listdir(checkpoint)
+    ):
+        return checkpoint
+    if checkpoint == "":
+        return get_model("20b")
+    return get_model(checkpoint)
 
 
 def init_env():
