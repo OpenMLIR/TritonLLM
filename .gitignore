@@ -41,3 +41,4 @@ tritonllm.egg-info/*
 gpt-oss-20b/*
 gpt-oss-120b/*
 tritonllm/bin/*
+log_dir/*
