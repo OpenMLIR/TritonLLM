@@ -164,6 +164,8 @@ def make_default_opt_flags_nvidia(
     block_n = opt_flags_nvidia.compute_block_n(n, arch, precision_config)
     if cuda_capability_eq(8, 6):
         block_n = block_n // 2
+    if cuda_capability_eq(12) and block_m == 16 and block_n == 256:
+        block_n //= 2
     # is_persistent
     grid_size = opt_flags_nvidia.compute_grid_size(routing_data, m, n, block_m, block_n)
     n_sms = torch.cuda.get_device_properties(0).multi_processor_count
@@ -182,8 +184,10 @@ def make_default_opt_flags_nvidia(
         block_k = constraints["block_k"]
     else:
         block_k = opt_flags_nvidia.compute_block_k(m, k, is_persistent, lhs_dtype, rhs_dtype, precision_config)
-    if cuda_capability_eq(12) or cuda_capability_eq(8, 9) or cuda_capability_eq(8, 6):
+    if cuda_capability_eq(8, 9) or cuda_capability_eq(8, 6):
         block_k //= 2
+    # if cuda_capability_eq(12) and block_m == 16 and block_n == 256:
+    #     block_k //= 2
     # split_k
     if constraints.get("split_k", None) is not None:
         split_k = constraints["split_k"]
@@ -218,7 +222,6 @@ def make_default_opt_flags_nvidia(
     assert num_stages >= 1
     if constraints.get("num_stages", None):
         num_stages = constraints["num_stages"]
-
     # fused scatter scratchpad
     if constraints.get("fused_scatter", None) is not None:
         fused_scatter = constraints["fused_scatter"]
