@@ -17,7 +17,7 @@ else:
     from gpt_oss.triton.attention_with_tma import attention, attention_ref
 
 from gpt_oss.triton.moe import quantize_mx4, moe
-from gpt_oss.triton.triton_kernels import rmsnorm_forward, rope_forward
+from gpt_oss.triton.triton_kernels import rmsnorm_forward, rope_forward, unembedding_forward
 
 @dataclass
 class ModelConfig:
@@ -52,6 +52,19 @@ class RMSNorm(torch.nn.Module):
     @record_function("rmsnorm")
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return rmsnorm_forward(x, self.scale, self.eps)
+
+
+class Linear(torch.nn.Module):
+    def __init__(
+        self, hidden_size: int, vocab_size: int, device: torch.device | None = None
+    ):
+        super().__init__()
+        self.hidden_size = hidden_size
+        self.vocab_size = vocab_size
+
+    @record_function("unembedding")
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return unembedding_forward(x, self.weight)
 
 
 class RotaryEmbedding(torch.nn.Module):
@@ -431,6 +444,7 @@ class Transformer(torch.nn.Module):
             ]
         )
         self.norm = RMSNorm(config.hidden_size, device=device)
+        # TODO: use Triton 
         self.unembedding = torch.nn.Linear(
             config.hidden_size,
             config.vocab_size,
