@@ -528,6 +528,7 @@ class TokenGenerator:
         predicted_token = prompt_tokens[-1]
         num_generated_tokens = 0
         if os.getenv("profile", "0") == "1":
+            print("DEBUG: You are currently in profiling mode. To disable, run `export profile=0`", flush=True)
             with profile(
                 on_trace_ready=torch.profiler.tensorboard_trace_handler("./log_dir"),
                 activities=[torch.profiler.ProfilerActivity.CPU,

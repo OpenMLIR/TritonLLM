@@ -225,6 +225,8 @@ def make_default_opt_flags_nvidia(
     if constraints.get("num_stages", None):
         num_stages = constraints["num_stages"]
 
+    # if cuda_capability_eq(12) and block_m == 16 and block_n == 128:
+    #     num_stages = 2
     # fused scatter scratchpad
     if constraints.get("fused_scatter", None) is not None:
         fused_scatter = constraints["fused_scatter"]
