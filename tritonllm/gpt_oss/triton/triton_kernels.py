@@ -141,20 +141,19 @@ def matmul_bh_vh_kernel(
 
 
 def unembedding_forward(hidden, weight):
-    Bdim, H = hidden.shape
-    V, H = weight.shape
+    batch, num_tokens , hidden_size = hidden.shape
+    vocab_size, hidden_size = weight.shape
 
-    C = torch.empty((Bdim, V), device=hidden.device, dtype=torch.float32)
-
-    BLOCK_B, BLOCK_V, BLOCK_H = 32, 32, 32
-    grid = (triton.cdiv(Bdim, BLOCK_B), triton.cdiv(V, BLOCK_V))
+    logits = torch.empty((batch, num_tokens, vocab_size), device=hidden.device, dtype=torch.float32)
+    BLOCK_B, BLOCK_V, BLOCK_H = 16, 16, 256
+    grid = (triton.cdiv(num_tokens, BLOCK_B), triton.cdiv(vocab_size, BLOCK_V), batch)
 
     matmul_bh_vh_kernel[grid](
-        A, B, C,
-        Bdim, V, H,
-        A.stride(0), A.stride(1),
-        B.stride(0), B.stride(1),
-        C.stride(0), C.stride(1),
+        hidden, weight, logits,
+        num_tokens, vocab_size, hidden_size,
+        hidden_size, 1,
+        hidden_size, 1,
+        vocab_size, 1,
         BLOCK_B=BLOCK_B, BLOCK_V=BLOCK_V, BLOCK_H=BLOCK_H,
     )
-    return C
+    return logits

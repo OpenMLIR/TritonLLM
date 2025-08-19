@@ -54,13 +54,16 @@ class RMSNorm(torch.nn.Module):
         return rmsnorm_forward(x, self.scale, self.eps)
 
 
-class Linear(torch.nn.Module):
+class UnEmbedding(torch.nn.Module):
     def __init__(
         self, hidden_size: int, vocab_size: int, device: torch.device | None = None
     ):
         super().__init__()
-        self.hidden_size = hidden_size
-        self.vocab_size = vocab_size
+        self.weight = torch.nn.Parameter(
+            torch.empty((vocab_size, hidden_size), device=device, dtype=torch.float32)
+        )
+        torch.nn.init.kaiming_uniform_(self.weight, a=math.sqrt(5))
+
 
     @record_function("unembedding")
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -444,14 +447,8 @@ class Transformer(torch.nn.Module):
             ]
         )
         self.norm = RMSNorm(config.hidden_size, device=device)
-        # TODO: use Triton 
-        self.unembedding = torch.nn.Linear(
-            config.hidden_size,
-            config.vocab_size,
-            bias=False,
-            device=device,
-            dtype=torch.bfloat16,
-        )
+        self.unembedding = UnEmbedding(config.hidden_size, config.vocab_size, device=device)
+
 
     def forward(self, x: torch.Tensor, caches: list[Cache] | None = None) -> torch.Tensor:
         caches=caches or [None] * len(self.block)
