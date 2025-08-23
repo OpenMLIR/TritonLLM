@@ -9,7 +9,13 @@ from torch.profiler import record_function
 from torch.profiler import profile, record_function, ProfilerActivity
 
 from gpt_oss.triton.weights import Checkpoint
-from gpt_oss.triton.attention import attention, attention_ref
+
+from triton_kernels.target_info import cuda_capability_geq
+if not cuda_capability_geq(9):
+    from gpt_oss.triton.attention import attention, attention_ref
+else:
+    from gpt_oss.triton.attention_with_tma import attention, attention_ref
+
 from gpt_oss.triton.moe import quantize_mx4, moe
 from gpt_oss.triton.triton_kernels import rmsnorm_forward, rope_forward
 

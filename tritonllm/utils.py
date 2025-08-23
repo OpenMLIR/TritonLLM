@@ -7,6 +7,9 @@ from typing import Any, Optional, Union
 import tempfile
 import hashlib
 import filelock
+import triton
+import triton.language as tl
+
 
 def open_url(url):
     user_agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/119.0'
@@ -81,3 +84,33 @@ def init_env():
 
     # download o200k_base.tiktoken
     save_file_to_tritonllm_bin_dir(tritonllm_bin_dir)
+
+
+@tl.constexpr_function
+def cuda_capability_eq(major, minor=0):
+    """
+    Determines whether we have compute capability == (major, minor) and
+    returns this as a constexpr boolean. This can be used for guarding
+    inline asm implementations that require a certain compute capability.
+    """
+    target = triton.runtime.driver.active.get_current_target()
+    if target is None or target.backend != "cuda":
+        return False
+    assert isinstance(target.arch, int)
+    return target.arch == major * 10 + minor
+
+
+def reduce_block_n(block_n, block_m):
+    if cuda_capability_eq(8, 6):
+        return block_n // 2
+    if cuda_capability_eq(12) and block_n == 256 and block_m == 16:
+        return block_n // 2
+    return block_n
+
+
+def reduce_block_k(block_k):
+    if cuda_capability_eq(8, 6):
+        return block_k // 2
+    if cuda_capability_eq(8, 9):
+        return block_k // 2
+    return block_k
