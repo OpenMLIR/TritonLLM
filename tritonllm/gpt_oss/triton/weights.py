@@ -71,7 +71,7 @@ class Checkpoint:
         scales_name: str,
         *,
         dtype: torch.dtype = torch.bfloat16,
-        rows_per_chunk: int = 16384 * 512,
+        rows_per_chunk: int = 32768 * 1024,
     ) -> torch.Tensor:
         assert blocks_name in self.tensor_name_to_file, (
             f"Blocks tensor {blocks_name} not found in checkpoint."
