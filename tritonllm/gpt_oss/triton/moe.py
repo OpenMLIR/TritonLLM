@@ -8,13 +8,17 @@ from triton_kernels.matmul_ogs import matmul_ogs
 from triton_kernels.numerics import InFlexData
 from triton_kernels.routing import routing
 from triton_kernels.tensor import convert_layout
-from triton_kernels.tensor_details.layout import StridedLayout, HopperMXScaleLayout, HopperMXValueLayout
+from triton_kernels.tensor_details.layout import StridedLayout, HopperMXScaleLayout, HopperMXValueLayout, BlackwellMXScaleLayout
 from triton_kernels.tensor import wrap_torch_tensor, FP4
+from triton_kernels.target_info import cuda_capability_geq
 
 
 def quantize_mx4(w):
     w, w_scale = downcast_to_mxfp(w.to(torch.bfloat16), torch.uint8, axis=1)
-    w = convert_layout(wrap_torch_tensor(w, dtype=FP4), HopperMXValueLayout, mx_axis=1)
+    if not cuda_capability_geq(10):
+        w = convert_layout(wrap_torch_tensor(w, dtype=FP4), HopperMXValueLayout, mx_axis=1)
+    else:
+        w = convert_layout(wrap_torch_tensor(w, dtype=FP4), BlackwellMXScaleLayout, mx_axis=1)
     w_scale = convert_layout(wrap_torch_tensor(w_scale), StridedLayout)
     return w, w_scale
 
