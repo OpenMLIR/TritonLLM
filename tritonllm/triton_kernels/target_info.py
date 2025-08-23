@@ -2,7 +2,7 @@ import torch
 import triton
 import triton.language as tl
 
-from triton.language.target_info import (
+from tritonllm.triton_upstream.language.target_info import (
     cuda_capability_geq,
     is_cuda,
     is_hip,
@@ -23,7 +23,7 @@ __all__ = [
 ]
 
 
-@triton.constexpr_function
+@tl.constexpr_function
 def get_cdna_version():
     """
     Gets the AMD architecture version, i.e. CDNA3 or CDNA4, currently
@@ -40,12 +40,12 @@ def get_cdna_version():
     return -1
 
 
-@triton.constexpr_function
+@tl.constexpr_function
 def has_tma_gather():
     return cuda_capability_geq(10, 0)
 
 
-@triton.constexpr_function
+@tl.constexpr_function
 def has_native_mxfp():
     return cuda_capability_geq(10, 0)
 
