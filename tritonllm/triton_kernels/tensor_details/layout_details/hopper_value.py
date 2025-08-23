@@ -2,7 +2,7 @@ import torch
 import triton
 import triton.language as tl
 from .base import Layout
-from ...target_info import cuda_capability_geq
+from triton_kernels.target_info import cuda_capability_geq
 
 
 if not cuda_capability_geq(9):
