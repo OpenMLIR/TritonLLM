@@ -10,6 +10,7 @@ from torch.profiler import profile, record_function, ProfilerActivity
 
 from gpt_oss.triton.weights import Checkpoint
 
+from triton_kernels.target_info import cuda_capability_geq
 if not cuda_capability_geq(9):
     from gpt_oss.triton.attention import attention, attention_ref
 else:
