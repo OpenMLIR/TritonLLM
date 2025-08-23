@@ -14,7 +14,7 @@ def generate(args):
     from gpt_oss.triton.model import TokenGenerator as TritonGenerator
     device = torch.device(f"cuda:0")
     checkpoint = get_model_with_checkpoint(args.checkpoint)
-    generator = TritonGenerator(checkpoint, context=4096, device=device)
+    generator = TritonGenerator(checkpoint, context=args.context_length, device=device)
 
     tokenizer = get_tokenizer()
     tokens = tokenizer.encode(args.prompt)
@@ -61,5 +61,11 @@ def get_parser_args():
         type=int,
         default=0,
         help="Limit on the number of tokens (0 to disable)",
+    )
+    parser.add_argument(
+        "--context-length",
+        type=int,
+        default=4096,
+        help="Context length",
     )
     return parser.parse_args()
