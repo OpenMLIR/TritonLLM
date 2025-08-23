@@ -520,6 +520,14 @@ class TokenGenerator:
             self.logits = self.model(self.input_token[None, :], caches=self.caches)[0]
 
     @torch.inference_mode()
+    def sample_next_token(self, logits: torch.Tensor, temperature: float) -> int:
+        """Executed only on rank 0."""
+        if temperature == 0.0:
+            return torch.argmax(logits[-1, :], dim=-1).item()
+        probs = torch.softmax(logits * (1.0 / temperature), dim=-1)
+        return torch.multinomial(probs[-1, :], num_samples=1).item()
+
+    @torch.inference_mode()
     def generate(self,
                  prompt_tokens: list[int],
                  stop_tokens: list[int] | None = None,
@@ -545,29 +553,13 @@ class TokenGenerator:
                 with record_function("model_inference"):
                     self.input_token[0] = predicted_token
                     self.graph.replay()
-                    if temperature == 0.0:
-                        predicted_token = torch.argmax(self.logits[-1, :], dim=-1).item()
-                    else:
-                        probs = torch.softmax(self.logits * (1.0 / temperature), dim=-1)
-                        predicted_token = torch.multinomial(probs[-1, :], num_samples=1).item()
-                    num_generated_tokens += 1
-
-                    if return_logprobs:
-                        logprobs = torch.log_softmax(self.logits[-1, :], dim=-1)
-                        selected_logprobs = logprobs[predicted_token].item()
-                        yield predicted_token, selected_logprobs
-                    else:
-                        yield predicted_token
+                    self.sample_next_token(self.logits, temperature)
             return
 
         while max_tokens == 0 or num_generated_tokens < max_tokens:
             self.input_token[0] = predicted_token
             self.graph.replay()
-            if temperature == 0.0:
-                predicted_token = torch.argmax(self.logits[-1, :], dim=-1).item()
-            else:
-                probs = torch.softmax(self.logits * (1.0 / temperature), dim=-1)
-                predicted_token = torch.multinomial(probs[-1, :], num_samples=1).item()
+            predicted_token = self.sample_next_token(self.logits, temperature)
             num_generated_tokens += 1
 
             if return_logprobs:
