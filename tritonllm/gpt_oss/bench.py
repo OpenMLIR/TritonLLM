@@ -562,14 +562,11 @@ class HarmonyChatTool:
         # Warm up
         print(termcolor.colored("Warming up...", "yellow"))
         for file_name in prompt_files:
-            lines = self.get_file_lines(file_name, shuffle=True)
-            if lines:
-                messages = self.base_messages.copy()
-                self._benchmark_inference(lines[0], messages)
-                if len(lines) > 1:
-                    messages = self.base_messages.copy()
-                    self._benchmark_inference(lines[1], messages)
-                break
+            lines = self.get_file_lines(file_name, shuffle=False)
+            messages = self.base_messages.copy()
+            self._benchmark_inference(lines[6], messages)
+            messages = self.base_messages.copy()
+            self._benchmark_inference(lines[8], messages)
 
         # Run benchmarks
         overall_stats = {"total_time": 0, "total_tokens": 0}
