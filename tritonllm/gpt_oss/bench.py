@@ -564,9 +564,9 @@ class HarmonyChatTool:
         for file_name in prompt_files:
             lines = self.get_file_lines(file_name, shuffle=False)
             messages = self.base_messages.copy()
-            self._benchmark_inference(lines[6], messages)
+            self._benchmark_inference(lines[0], messages)
             messages = self.base_messages.copy()
-            self._benchmark_inference(lines[8], messages)
+            self._benchmark_inference(lines[3], messages)
 
         # Run benchmarks
         overall_stats = {"total_time": 0, "total_tokens": 0}
