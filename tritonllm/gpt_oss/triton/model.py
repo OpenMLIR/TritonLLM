@@ -5,7 +5,7 @@ import termcolor
 from dataclasses import dataclass
 
 import torch
-from torch.profiler import record_function
+import torch.nn.functional as F
 from torch.profiler import profile, record_function, ProfilerActivity
 
 from gpt_oss.triton.weights import Checkpoint
@@ -17,7 +17,7 @@ else:
     from gpt_oss.triton.attention_with_tma import attention, attention_ref
 
 from gpt_oss.triton.moe import quantize_mx4, moe
-from gpt_oss.triton.triton_kernels import rmsnorm_forward, rope_forward, unembedding_forward
+from gpt_oss.triton.triton_kernels import rmsnorm_forward, rope_forward
 
 @dataclass
 class ModelConfig:
@@ -60,14 +60,14 @@ class UnEmbedding(torch.nn.Module):
     ):
         super().__init__()
         self.weight = torch.nn.Parameter(
-            torch.empty((vocab_size, hidden_size), device=device, dtype=torch.float32)
+            torch.empty((vocab_size, hidden_size), device=device, dtype=torch.bfloat16)
         )
         torch.nn.init.kaiming_uniform_(self.weight, a=math.sqrt(5))
 
 
     @record_function("unembedding")
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return unembedding_forward(x, self.weight)
+        return F.linear(x, self.weight, bias=None)
 
 
 class RotaryEmbedding(torch.nn.Module):
