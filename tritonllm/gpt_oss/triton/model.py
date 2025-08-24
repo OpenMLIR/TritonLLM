@@ -9,8 +9,8 @@ from torch.profiler import profile, record_function, ProfilerActivity
 
 from gpt_oss.triton.weights import Checkpoint
 
-from triton_kernels.target_info import cuda_capability_geq
-if not cuda_capability_geq(9):
+from triton_kernels.target_info import cuda_capability_geq, cuda_capability_eq
+if not cuda_capability_geq(9) or cuda_capability_eq(12):
     from gpt_oss.triton.attention import attention, attention_ref
 else:
     from gpt_oss.triton.attention_with_tma import attention, attention_ref
@@ -305,7 +305,7 @@ class AttentionBlock(torch.nn.Module):
             self.head_dim,
         )
         with record_function("attn_kernel"):
-            if n_ctx == 1:
+            if n_ctx < 64:
                 t = attention_ref(
                     q,
                     k,
@@ -325,18 +325,6 @@ class AttentionBlock(torch.nn.Module):
                     self.sliding_window,
                     offset,
                 )
-                if n_ctx < 64:
-                    t1 = attention_ref(
-                        q,
-                        k,
-                        v,
-                        self.sinks,
-                        self.sm_scale,
-                        self.sliding_window,
-                        offset,
-                    )
-                    # torch.testing.assert_close(t, t1)
-                    t = t1
 
         with record_function("c_proj"):
             t = self.out(t)

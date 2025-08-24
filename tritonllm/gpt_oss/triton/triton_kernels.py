@@ -1,6 +1,7 @@
 import torch
 import triton
 import triton.language as tl
+import math
 
 
 @triton.jit
@@ -24,11 +25,9 @@ def rmsnorm_kernel(x_ptr, t_ptr, scale_ptr, last_dim, eps, BLOCK_SIZE: tl.conste
 
 def rmsnorm_forward(x, scale, eps):
     t = torch.empty_like(x)
-    last_dim = x.shape[-1]
-    remaining = 1
-    for s in x.shape[:-1]:
-        remaining *= s
-    grid = lambda META: (remaining, triton.cdiv(last_dim, META['BLOCK_SIZE']))
+    *prefix_shape, last_dim = x.shape
+    rows_total = math.prod(prefix_shape)
+    grid = lambda META: (rows_total, triton.cdiv(last_dim, META['BLOCK_SIZE']))
     rmsnorm_kernel[grid](x, t, scale, last_dim, eps, BLOCK_SIZE=512)
     return t
 
