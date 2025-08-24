@@ -314,5 +314,4 @@ if __name__ == "__main__":
     o1 = attention(q, k, v, sinks, sm_scale, sliding_window, start_q)
     o2 = attention_ref(q, k, v, sinks, sm_scale, sliding_window, start_q)
 
-    torch.testing.assert_close(o1, o2, rtol=1e-2, atol=1e-2)
-    print(o1)
+    torch.testing.assert_close(o1, o2)
