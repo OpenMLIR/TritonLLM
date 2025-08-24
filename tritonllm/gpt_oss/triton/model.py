@@ -305,7 +305,7 @@ class AttentionBlock(torch.nn.Module):
             self.head_dim,
         )
         with record_function("attn_kernel"):
-            if n_ctx == 1:
+            if n_ctx < 64:
                 t = attention_ref(
                     q,
                     k,
@@ -325,18 +325,6 @@ class AttentionBlock(torch.nn.Module):
                     self.sliding_window,
                     offset,
                 )
-                if n_ctx < 64:
-                    t1 = attention_ref(
-                        q,
-                        k,
-                        v,
-                        self.sinks,
-                        self.sm_scale,
-                        self.sliding_window,
-                        offset,
-                    )
-                    # torch.testing.assert_close(t, t1)
-                    t = t1
 
         with record_function("c_proj"):
             t = self.out(t)

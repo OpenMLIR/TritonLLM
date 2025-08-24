@@ -130,7 +130,7 @@ def _attn_fwd(
             mask = mask | too_old
 
         k = tl.load(K_block_ptr)
-        qk = tl.dot(q, k)
+        qk = tl.dot(q, k, allow_tf32=False)
 
         qk = qk * qk_scale + tl.where(mask, -1.0e6, 0.0)
         m_ij = tl.maximum(m_i, tl.max(qk, 1))
@@ -142,7 +142,8 @@ def _attn_fwd(
         acc = acc * alpha[:, None]
 
         v = tl.load(V_block_ptr)
-        acc = tl.dot(p.to(tl.bfloat16), v, acc)
+        v = v.to(tl.float32)
+        acc = tl.dot(p, v, acc, allow_tf32=False)
 
         l_i = l_i * alpha + l_ij
         m_i = m_ij
