@@ -29,7 +29,7 @@ def rmsnorm_forward(x, scale, eps):
     for s in x.shape[:-1]:
         remaining *= s
     grid = lambda META: (remaining, triton.cdiv(last_dim, META['BLOCK_SIZE']))
-    rmsnorm_kernel[grid](x, t, scale, last_dim, eps, BLOCK_SIZE=128)
+    rmsnorm_kernel[grid](x, t, scale, last_dim, eps, BLOCK_SIZE=512)
     return t
 
 
