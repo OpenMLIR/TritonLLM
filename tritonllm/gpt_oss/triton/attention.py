@@ -19,6 +19,8 @@ def _attn_fwd(
     K,
     V,
     Sinks,
+    # M,
+    Out,  #
     sm_scale,
     Start_q,
     stride_qz,
@@ -33,6 +35,10 @@ def _attn_fwd(
     stride_vh,
     stride_vn,
     stride_vk,  #
+    stride_oz,
+    stride_oh,
+    stride_om,
+    stride_ok,  #
     Z,
     H,
     N_Q_CTX,
@@ -51,6 +57,7 @@ def _attn_fwd(
     q_offset = off_z.to(tl.int64) * stride_qz + off_h.to(tl.int64) * stride_qh
     k_offset = off_z.to(tl.int64) * stride_kz + off_h.to(tl.int64) * stride_kh
     v_offset = off_z.to(tl.int64) * stride_vz + off_h.to(tl.int64) * stride_vh
+    o_offset = off_z.to(tl.int64) * stride_oz + off_h.to(tl.int64) * stride_oh
 
     # block pointers
     Q_block_ptr = tl.make_block_ptr(
@@ -76,6 +83,15 @@ def _attn_fwd(
         offsets=(0, 0),
         block_shape=(HEAD_DIM, BLOCK_N),
         order=(0, 1),
+    )
+
+    O_block_ptr = tl.make_block_ptr(
+        base=Out + o_offset,
+        shape=(N_Q_CTX, HEAD_DIM),
+        strides=(stride_om, stride_ok),
+        offsets=(start_m * BLOCK_M, 0),
+        block_shape=(BLOCK_M, HEAD_DIM),
+        order=(1, 0),
     )
 
     # load attention sinks
@@ -137,8 +153,10 @@ def _attn_fwd(
     sink = tl.math.exp(sink - m_i)
     z = l_i + sink
     acc = acc / z[:, None]
-    m_i += tl.math.log(l_i)
-    tl.store(Q_block_ptr, acc.to(tl.bfloat16))
+    # m_i += tl.math.log(l_i)
+    # m_ptrs = M + off_hz * N_Q_CTX + offs_m
+    # tl.store(m_ptrs, m_i)
+    tl.store(O_block_ptr, acc.to(Out.type.element_ty))
 
 
 class _attention(torch.autograd.Function):
@@ -168,7 +186,7 @@ class _attention(torch.autograd.Function):
         k = torch.nn.functional.pad(k, (0, 0, 0, n_pad_size))
         v = torch.nn.functional.pad(v, (0, 0, 0, n_pad_size))
 
-        # o = torch.empty_like(q)
+        o = torch.empty_like(q)
         # M = torch.empty((bs, n_heads, n_ctx + m_pad_size), device=q.device, dtype=torch.float32)
         grid = (triton.cdiv(n_ctx, BLOCK_M), bs * n_heads, 1)
         _attn_fwd[grid](
@@ -176,6 +194,8 @@ class _attention(torch.autograd.Function):
             k,
             v,
             sinks,
+            # M,
+            o,
             sm_scale,
             start_q,
             q.stride(0),
@@ -190,6 +210,10 @@ class _attention(torch.autograd.Function):
             v.stride(1),
             v.stride(2),
             v.stride(3),  #
+            o.stride(0),
+            o.stride(1),
+            o.stride(2),
+            o.stride(3),  #
             q.shape[0],
             q.shape[1],  #
             N_Q_CTX=n_ctx + m_pad_size,  #
@@ -199,9 +223,13 @@ class _attention(torch.autograd.Function):
             BLOCK_M=BLOCK_M,
             BLOCK_N=BLOCK_N,
         )
-        q = q[:, :, :n_ctx, :].transpose(1, 2).contiguous()
-        q = q.view(bs, n_ctx, n_heads * HEAD_DIM_V)
-        return q
+        # ctx.save_for_backward(q, k, v, sinks, o, M, start_q)
+        # ctx.sm_scale = sm_scale
+        # ctx.bandwidth = bandwidth
+
+        o = o[:, :, :n_ctx, :].transpose(1, 2).contiguous()
+        o = o.view(bs, n_ctx, n_heads * HEAD_DIM_V)
+        return o
 
 
 attention = _attention.apply

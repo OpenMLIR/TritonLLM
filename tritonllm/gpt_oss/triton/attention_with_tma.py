@@ -22,7 +22,7 @@ def _attn_fwd(
     V,
     Sinks,
     sm_scale,
-    M,
+    # M,
     Out,  #
     Start_q,
     Z,
@@ -94,9 +94,9 @@ def _attn_fwd(
     sink = tl.math.exp(sink - m_i)
     z = l_i + sink
     acc = acc / z[:, None]
-    m_i += tl.math.log(l_i)
-    m_ptrs = M + off_hz * N_Q_CTX + offs_m
-    tl.store(m_ptrs, m_i)
+    # m_i += tl.math.log(l_i)
+    # m_ptrs = M + off_hz * N_Q_CTX + offs_m
+    # tl.store(m_ptrs, m_i)
     acc = acc.to(Out.dtype)[None, None, :, :]
     Out.store([off_z, off_h, start_m * BLOCK_M, 0], acc)
 
@@ -129,7 +129,7 @@ class _attention(torch.autograd.Function):
         v = torch.nn.functional.pad(v, (0, 0, 0, n_pad_size))
 
         o = torch.empty_like(q)
-        M = torch.empty((bs, n_heads, n_ctx + m_pad_size), device=q.device, dtype=torch.float32)
+        # M = torch.empty((bs, n_heads, n_ctx + m_pad_size), device=q.device, dtype=torch.float32)
         grid = (triton.cdiv(n_ctx, BLOCK_M), bs * n_heads, 1)
         _attn_fwd[grid](
             TensorDescriptor.from_tensor(q, [1, 1, BLOCK_M, HEAD_DIM_K]),
@@ -137,7 +137,7 @@ class _attention(torch.autograd.Function):
             TensorDescriptor.from_tensor(v, [1, 1, BLOCK_N, HEAD_DIM_K]),
             sinks,
             sm_scale,
-            M,
+            # M,
             TensorDescriptor.from_tensor(o, [1, 1, BLOCK_M, HEAD_DIM_K]),
             start_q,
             q.shape[0],
@@ -150,9 +150,9 @@ class _attention(torch.autograd.Function):
             BLOCK_N=BLOCK_N,
         )
 
-        ctx.save_for_backward(q, k, v, sinks, o, M, start_q)
-        ctx.sm_scale = sm_scale
-        ctx.bandwidth = bandwidth
+        # ctx.save_for_backward(q, k, v, sinks, o, M, start_q)
+        # ctx.sm_scale = sm_scale
+        # ctx.bandwidth = bandwidth
 
         o = o[:, :, :n_ctx, :].transpose(1, 2).contiguous()
         o = o.view(bs, n_ctx, n_heads * HEAD_DIM_V)

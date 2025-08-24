@@ -1,5 +1,6 @@
 from .layout_details.base import Layout
 from .layout_details.blackwell_scale import BlackwellMXScaleLayout
+from .layout_details.blackwell_value import BlackwellMXValueLayout
 from .layout_details.hopper_scale import HopperMXScaleLayout
 from .layout_details.hopper_value import HopperMXValueLayout
 from .layout_details.strided import StridedLayout
@@ -8,6 +9,7 @@ from ..target_info import cuda_capability_geq
 __all__ = [
     "Layout",
     "BlackwellMXScaleLayout",
+    "BlackwellMXValueLayout",
     "HopperMXScaleLayout",
     "HopperMXValueLayout",
     "StridedLayout",
@@ -16,7 +18,7 @@ __all__ = [
 
 def make_default_matmul_mxfp4_w_layout(mx_axis: int):
     if cuda_capability_geq(10):
-        return StridedLayout, dict()
+        return BlackwellMXValueLayout, dict()
     elif cuda_capability_geq(9):
         return HopperMXValueLayout, {"mx_axis": mx_axis}
     else:

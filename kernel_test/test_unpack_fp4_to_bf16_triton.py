@@ -1,7 +1,7 @@
 import torch
 import triton
 import triton.language as tl
-from triton_kernels.testing import assert_close
+from tritonllm.triton_kernels.testing import assert_close
 
 
 @triton.jit

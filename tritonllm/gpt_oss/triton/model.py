@@ -5,7 +5,6 @@ import termcolor
 from dataclasses import dataclass
 
 import torch
-from torch.profiler import record_function
 from torch.profiler import profile, record_function, ProfilerActivity
 
 from gpt_oss.triton.weights import Checkpoint
@@ -17,7 +16,7 @@ else:
     from gpt_oss.triton.attention_with_tma import attention, attention_ref
 
 from gpt_oss.triton.moe import quantize_mx4, moe
-from gpt_oss.triton.triton_kernels import rmsnorm_forward, rope_forward
+from gpt_oss.triton.triton_kernels import rmsnorm_forward, rope_forward, unembedding_forward
 
 @dataclass
 class ModelConfig:
@@ -49,9 +48,57 @@ class RMSNorm(torch.nn.Module):
             torch.ones(num_features, device=device, dtype=torch.float32)
         )
 
-    @record_function("rmsnorm")
+    @record_function("rmsnorm_triton")
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return rmsnorm_forward(x, self.scale, self.eps)
+
+
+class UnEmbedding(torch.nn.Module):
+    def __init__(
+        self, hidden_size: int, vocab_size: int, device: torch.device | None = None
+    ):
+        super().__init__()
+        self.weight = torch.nn.Parameter(
+            torch.empty((vocab_size, hidden_size), device=device, dtype=torch.bfloat16)
+        )
+
+    @record_function("unembedding_linear")
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return torch.nn.functional.linear(x, self.weight, bias=None)
+
+
+class QKV(torch.nn.Module):
+    def __init__(
+        self, hidden_size: int, qkv_dim: int, device: torch.device | None = None
+    ):
+        super().__init__()
+        self.weight = torch.nn.Parameter(
+            torch.empty((qkv_dim, hidden_size), device=device, dtype=torch.bfloat16)
+        )
+        self.bias = torch.nn.Parameter(
+            torch.empty((qkv_dim), device=device, dtype=torch.bfloat16)
+        )
+
+    @record_function("qkv_linear")
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return torch.nn.functional.linear(x, self.weight, self.bias)
+
+
+class OUT(torch.nn.Module):
+    def __init__(
+        self, out_dim: int, hidden_size: int, device: torch.device | None = None
+    ):
+        super().__init__()
+        self.weight = torch.nn.Parameter(
+            torch.empty((hidden_size, out_dim), device=device, dtype=torch.bfloat16)
+        )
+        self.bias = torch.nn.Parameter(
+            torch.empty((hidden_size), device=device, dtype=torch.bfloat16)
+        )
+
+    @record_function("out_linear")
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return torch.nn.functional.linear(x, self.weight, self.bias)
 
 
 class RotaryEmbedding(torch.nn.Module):
@@ -141,7 +188,7 @@ class RotaryEmbedding(torch.nn.Module):
         o2 = x2 * cos + x1 * sin
         return torch.cat((o1, o2), dim=-1)
 
-    @record_function("rope")
+    @record_function("rope_triton")
     def forward(
         self,
         query: torch.Tensor,
@@ -209,15 +256,8 @@ class AttentionBlock(torch.nn.Module):
         qkv_dim = config.head_dim * (
             config.num_attention_heads + 2 * config.num_key_value_heads
         )
-        self.qkv = torch.nn.Linear(
-            config.hidden_size, qkv_dim, device=device, dtype=torch.bfloat16
-        )
-        self.out = torch.nn.Linear(
-            config.head_dim * config.num_attention_heads,
-            config.hidden_size,
-            device=device,
-            dtype=torch.bfloat16,
-        )
+        self.qkv = QKV(config.hidden_size, qkv_dim, device=device)
+        self.out = OUT(config.head_dim * config.num_attention_heads, config.hidden_size, device=device)
         self.sm_scale = 1 / math.sqrt(config.head_dim)
         self.rope = RotaryEmbedding(
             config.head_dim,
@@ -431,13 +471,8 @@ class Transformer(torch.nn.Module):
             ]
         )
         self.norm = RMSNorm(config.hidden_size, device=device)
-        self.unembedding = torch.nn.Linear(
-            config.hidden_size,
-            config.vocab_size,
-            bias=False,
-            device=device,
-            dtype=torch.bfloat16,
-        )
+        self.unembedding = UnEmbedding(config.hidden_size, config.vocab_size, device=device)
+
 
     def forward(self, x: torch.Tensor, caches: list[Cache] | None = None) -> torch.Tensor:
         caches=caches or [None] * len(self.block)
@@ -559,6 +594,7 @@ class TokenGenerator:
         while max_tokens == 0 or num_generated_tokens < max_tokens:
             self.input_token[0] = predicted_token
             self.graph.replay()
+            torch.cuda.synchronize()
             predicted_token = self.sample_next_token(self.logits, temperature)
             num_generated_tokens += 1
 
