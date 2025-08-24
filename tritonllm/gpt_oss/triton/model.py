@@ -48,7 +48,7 @@ class RMSNorm(torch.nn.Module):
             torch.ones(num_features, device=device, dtype=torch.float32)
         )
 
-    @record_function("rmsnorm")
+    @record_function("rmsnorm_triton")
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return rmsnorm_forward(x, self.scale, self.eps)
 
@@ -64,7 +64,7 @@ class UnEmbedding(torch.nn.Module):
         torch.nn.init.kaiming_uniform_(self.weight, a=math.sqrt(5))
 
 
-    @record_function("unembedding")
+    @record_function("unembedding_triton")
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return unembedding_forward(x, self.weight)
 
@@ -156,7 +156,7 @@ class RotaryEmbedding(torch.nn.Module):
         o2 = x2 * cos + x1 * sin
         return torch.cat((o1, o2), dim=-1)
 
-    @record_function("rope")
+    @record_function("rope_triton")
     def forward(
         self,
         query: torch.Tensor,
@@ -569,6 +569,7 @@ class TokenGenerator:
         while max_tokens == 0 or num_generated_tokens < max_tokens:
             self.input_token[0] = predicted_token
             self.graph.replay()
+            torch.cuda.synchronize()
             predicted_token = self.sample_next_token(self.logits, temperature)
             num_generated_tokens += 1
 
