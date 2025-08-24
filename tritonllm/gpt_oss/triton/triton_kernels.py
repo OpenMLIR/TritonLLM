@@ -130,21 +130,21 @@ def matmul_bh_vh_kernel(
         # B: [V,H] (need transpose to [H,V] when reading)
         b_ptrs = B_ptr + (offs_v[None, :] * stride_bv + (h + offs_h[:, None]) * stride_bh)
 
-        a = tl.load(a_ptrs, mask=(offs_b[:, None] < B) & (h + offs_h[None, :] < H), other=0.).to(tl.float32)
-        b = tl.load(b_ptrs, mask=(offs_v[None, :] < V) & (h + offs_h[:, None] < H), other=0.).to(tl.float32)
+        a = tl.load(a_ptrs, mask=(offs_b[:, None] < B) & (h + offs_h[None, :] < H), other=0.)
+        b = tl.load(b_ptrs, mask=(offs_v[None, :] < V) & (h + offs_h[:, None] < H), other=0.)
 
         acc += tl.dot(a, b)
 
     # Write C: [B,V]
     c_ptrs = C_ptr + offs_b[:, None] * stride_cb + offs_v[None, :] * stride_cv
-    tl.store(c_ptrs, acc, mask=(offs_b[:, None] < B) & (offs_v[None, :] < V))
+    tl.store(c_ptrs, acc.to(tl.bfloat16), mask=(offs_b[:, None] < B) & (offs_v[None, :] < V))
 
 
 def unembedding_forward(hidden, weight):
-    batch, num_tokens , hidden_size = hidden.shape
+    batch, num_tokens, hidden_size = hidden.shape
     vocab_size, hidden_size = weight.shape
 
-    logits = torch.empty((batch, num_tokens, vocab_size), device=hidden.device, dtype=torch.float32)
+    logits = torch.empty((batch, num_tokens, vocab_size), device=hidden.device, dtype=torch.bfloat16)
     BLOCK_B, BLOCK_V, BLOCK_H = 16, 16, 256
     grid = (triton.cdiv(num_tokens, BLOCK_B), triton.cdiv(vocab_size, BLOCK_V), batch)
 
