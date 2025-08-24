@@ -3,7 +3,6 @@
 from enum import Enum
 import triton
 import torch
-import torch.nn.functional as F
 from .mxfp_details._upcast_from_mxfp import _upcast_from_mxfp
 from .mxfp_details._downcast_to_mxfp import _downcast_to_mxfp, _dequantize_mxfp8_fn, MXFP_BLOCK_SIZE
 
@@ -158,8 +157,8 @@ def downcast_to_mxfp_torch(src_tensor: torch.Tensor, out_quant_type: torch.dtype
     # Pad the axis to be divisible by 32, in case it is not.
     next_multiple = triton.cdiv(axis_shape, MXFP_BLOCK_SIZE) * MXFP_BLOCK_SIZE
     pad_amount = next_multiple - axis_shape
-    padded_src = F.pad(src, (0, pad_amount))
-    valid_mask = F.pad(torch.ones_like(src, dtype=torch.bool), (0, pad_amount))
+    padded_src = torch.nn.functional.pad(src, (0, pad_amount))
+    valid_mask = torch.nn.functional.pad(torch.ones_like(src, dtype=torch.bool), (0, pad_amount))
     padded_axis_shape = padded_src.size(-1)  # now divisible by 32
 
     # --- Compute per-group maximums for scale ---
@@ -282,7 +281,7 @@ def upcast_from_mxfp_torch(tensor: torch.Tensor, scale: torch.Tensor, target_dty
     axis_shape = fp32_tensor.size(-1)
     padded_axis_shape = triton.cdiv(logical_quant_dim, MXFP_BLOCK_SIZE) * MXFP_BLOCK_SIZE
     pad_size = padded_axis_shape - axis_shape
-    padded_tensor = F.pad(fp32_tensor, (0, pad_size))
+    padded_tensor = torch.nn.functional.pad(fp32_tensor, (0, pad_size))
 
     new_axis_shape = padded_tensor.shape[-1]
     new_shape = padded_tensor.shape[:-1] + (new_axis_shape // MXFP_BLOCK_SIZE, MXFP_BLOCK_SIZE)
