@@ -464,15 +464,11 @@ class Transformer(torch.nn.Module):
 
     def forward(self, x: torch.Tensor, caches: list[Cache] | None = None) -> torch.Tensor:
         caches=caches or [None] * len(self.block)
-        with record_function("embedding"):
-            x = self.embedding(x)
+        x = self.embedding(x)
         for block, cache in zip(self.block, caches):
-            with record_function("block"):
-                x = block(x, cache=cache)
-        with record_function("norm_f"):
-            x = self.norm(x)
-        with record_function("unembedding"):
-            x = self.unembedding(x)
+            x = block(x, cache=cache)
+        x = self.norm(x)
+        x = self.unembedding(x)
         return x.float()
 
     def prefill(self, x: torch.Tensor, caches):
