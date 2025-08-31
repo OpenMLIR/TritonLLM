@@ -223,6 +223,7 @@ class _attention(torch.autograd.Function):
             BANDWIDTH=bandwidth,
             BLOCK_M=BLOCK_M,
             BLOCK_N=BLOCK_N,
+            num_stages=2,
         )
         # ctx.save_for_backward(q, k, v, sinks, o, M, start_q)
         # ctx.sm_scale = sm_scale

@@ -22,7 +22,7 @@ def _attn_fwd(
     V,
     Sinks,
     sm_scale,
-    # M,
+    M,
     Out,  #
     Start_q,
     Z,
@@ -129,7 +129,7 @@ class _attention(torch.autograd.Function):
         v = torch.nn.functional.pad(v, (0, 0, 0, n_pad_size))
 
         o = torch.empty_like(q)
-        # M = torch.empty((bs, n_heads, n_ctx + m_pad_size), device=q.device, dtype=torch.float32)
+        M = torch.empty((bs, n_heads, n_ctx + m_pad_size), device=q.device, dtype=torch.float32)
         grid = (triton.cdiv(n_ctx, BLOCK_M), bs * n_heads, 1)
         _attn_fwd[grid](
             TensorDescriptor.from_tensor(q, [1, 1, BLOCK_M, HEAD_DIM_K]),
@@ -137,7 +137,7 @@ class _attention(torch.autograd.Function):
             TensorDescriptor.from_tensor(v, [1, 1, BLOCK_N, HEAD_DIM_K]),
             sinks,
             sm_scale,
-            # M,
+            M,
             TensorDescriptor.from_tensor(o, [1, 1, BLOCK_M, HEAD_DIM_K]),
             start_q,
             q.shape[0],
@@ -148,6 +148,7 @@ class _attention(torch.autograd.Function):
             BANDWIDTH=bandwidth,
             BLOCK_M=BLOCK_M,
             BLOCK_N=BLOCK_N,
+            num_stages=2,
         )
 
         # ctx.save_for_backward(q, k, v, sinks, o, M, start_q)
@@ -227,3 +228,27 @@ def test_eq(batch_size, num_queries, num_keys, num_key_value_heads, num_key_valu
     o2 = attention_ref(q, k, v, sinks, sm_scale, sliding_window, start_q)
 
     torch.testing.assert_close(o1, o2)
+
+if __name__ == "__main__":
+    batch_size, num_queries, num_keys, num_key_value_heads, num_key_value_groups, head_dim, sm_scale, sliding_window, start_q = 1,64,8192,8,8,64,0.125, None, 0
+    num_queries = 70
+    q = torch.randn(batch_size, num_queries, num_key_value_heads, num_key_value_groups, head_dim).bfloat16().cuda()
+    k = torch.randn(batch_size, num_keys, num_key_value_heads, head_dim).bfloat16().cuda()
+    v = torch.randn(batch_size, num_keys, num_key_value_heads, head_dim).bfloat16().cuda()
+    sinks = torch.randn(num_key_value_heads * num_key_value_groups).bfloat16().cuda()
+
+    start_q = torch.tensor([start_q], dtype=torch.int32).cuda()
+
+    o1 = attention(q, k, v, sinks, sm_scale, sliding_window, start_q)
+    o2 = attention_ref(q, k, v, sinks, sm_scale, sliding_window, start_q)
+    torch.testing.assert_close(o1, o2)
+    def run():
+        return attention(q, k, v, sinks, sm_scale, sliding_window, start_q)
+
+    ms = triton.testing.do_bench(run, warmup=100, rep=300, grad_to_none=None)
+    print(f"Latency: {ms:.3f} ms")
+    def run():
+        attention_ref(q, k, v, sinks, sm_scale, sliding_window, start_q)
+
+    ms = triton.testing.do_bench(run, warmup=100, rep=300, grad_to_none=None)
+    print(f"Latency: {ms:.3f} ms")

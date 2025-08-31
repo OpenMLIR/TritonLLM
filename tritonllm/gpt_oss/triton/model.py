@@ -305,7 +305,7 @@ class AttentionBlock(torch.nn.Module):
             self.head_dim,
         )
         with record_function("attn_kernel"):
-            if n_ctx < 64:
+            if n_ctx <= 8:
                 t = attention_ref(
                     q,
                     k,
@@ -464,15 +464,11 @@ class Transformer(torch.nn.Module):
 
     def forward(self, x: torch.Tensor, caches: list[Cache] | None = None) -> torch.Tensor:
         caches=caches or [None] * len(self.block)
-        with record_function("embedding"):
-            x = self.embedding(x)
+        x = self.embedding(x)
         for block, cache in zip(self.block, caches):
-            with record_function("block"):
-                x = block(x, cache=cache)
-        with record_function("norm_f"):
-            x = self.norm(x)
-        with record_function("unembedding"):
-            x = self.unembedding(x)
+            x = block(x, cache=cache)
+        x = self.norm(x)
+        x = self.unembedding(x)
         return x.float()
 
     def prefill(self, x: torch.Tensor, caches):
@@ -582,7 +578,6 @@ class TokenGenerator:
         while max_tokens == 0 or num_generated_tokens < max_tokens:
             self.input_token[0] = predicted_token
             self.graph.replay()
-            torch.cuda.synchronize()
             predicted_token = self.sample_next_token(self.logits, temperature)
             num_generated_tokens += 1
 
