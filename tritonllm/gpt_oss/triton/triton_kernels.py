@@ -101,7 +101,7 @@ def rope_forward(query, key, sin, cos, max_context_length, offset):
         head_dim,
         num_key_value_heads,
         head_dim // 2,
-        TILE_TOKENS = 1 if num_tokens < 60 else 32,
+        TILE_TOKENS = 1 if num_tokens < 60 else 16,
     )
 
 
