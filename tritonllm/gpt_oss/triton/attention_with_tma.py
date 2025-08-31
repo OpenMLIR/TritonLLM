@@ -22,9 +22,13 @@ def _attn_fwd(
     V,
     Sinks,
     sm_scale,
-    # M,
+    M,
     Out,  #
     Start_q,
+    Z,
+    H,
+    N_Q_CTX,
+    N_KV_CTX,
     HEAD_DIM: tl.constexpr,  #
     BLOCK_M: tl.constexpr,  #
     BLOCK_N: tl.constexpr,  #
@@ -33,8 +37,9 @@ def _attn_fwd(
     tl.static_assert(BLOCK_N <= HEAD_DIM)
     start_q = tl.load(Start_q).to(tl.int32)
     start_m = tl.program_id(0)
-    off_z = tl.program_id(2)
-    off_h = tl.program_id(1)
+    off_hz = tl.program_id(1)
+    off_z = off_hz // H
+    off_h = off_hz % H
 
     # load attention sinks
     if Sinks is not None:
@@ -124,17 +129,21 @@ class _attention(torch.autograd.Function):
         v = torch.nn.functional.pad(v, (0, 0, 0, n_pad_size))
 
         o = torch.empty_like(q)
-        # M = torch.empty((bs, n_heads, n_ctx + m_pad_size), device=q.device, dtype=torch.float32)
-        grid = (triton.cdiv(n_ctx, BLOCK_M), n_heads, bs)
+        M = torch.empty((bs, n_heads, n_ctx + m_pad_size), device=q.device, dtype=torch.float32)
+        grid = (triton.cdiv(n_ctx, BLOCK_M), bs * n_heads, 1)
         _attn_fwd[grid](
             TensorDescriptor.from_tensor(q, [1, 1, BLOCK_M, HEAD_DIM_K]),
             TensorDescriptor.from_tensor(k, [1, 1, BLOCK_N, HEAD_DIM_K]),
             TensorDescriptor.from_tensor(v, [1, 1, BLOCK_N, HEAD_DIM_K]),
             sinks,
             sm_scale,
-            # M,
+            M,
             TensorDescriptor.from_tensor(o, [1, 1, BLOCK_M, HEAD_DIM_K]),
             start_q,
+            q.shape[0],
+            q.shape[1],
+            N_Q_CTX=n_ctx + m_pad_size,
+            N_KV_CTX=n_kv_ctx,
             HEAD_DIM=HEAD_DIM_K,
             BANDWIDTH=bandwidth,
             BLOCK_M=BLOCK_M,
