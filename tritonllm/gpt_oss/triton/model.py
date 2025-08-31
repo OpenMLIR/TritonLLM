@@ -578,7 +578,6 @@ class TokenGenerator:
         while max_tokens == 0 or num_generated_tokens < max_tokens:
             self.input_token[0] = predicted_token
             self.graph.replay()
-            torch.cuda.synchronize()
             predicted_token = self.sample_next_token(self.logits, temperature)
             num_generated_tokens += 1
 
