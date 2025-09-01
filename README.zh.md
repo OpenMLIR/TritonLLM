@@ -91,3 +91,15 @@ streamlit run streamlit/streamlit_chat.py
 [Triton Kernel 优先：全新 LLM 推理方式(47e9dcb)](https://zhuanlan.zhihu.com/p/1939592984820691987)
 
 [5090显卡+Triton，轻松玩转GPT-OSS-20B！(6bb4b91)](https://zhuanlan.zhihu.com/p/1936692690503865129)
+
+## triton_kernels
+
+triton_kernels 是一组用于在不同架构上实现高速 MoE（Mixture of Experts）的核函数（kernels）。这些内核支持多种精度格式（例如 bf16、mxfp4）。
+
+原始代码在这里：
+https://github.com/triton-lang/triton/tree/main/python/triton_kernels
+
+当前版本对应的提交为：
+de4376e90a3c2b5ca30ada25a50cccadeadf7f1a，
+并且使用了 BlackwellMXValueLayout 来提交：
+19ca20fda4cfd3ae0d3eabde5e547db581fbb7ee。

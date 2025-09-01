@@ -67,3 +67,12 @@ python -m gpt_oss.responses_api.serve
 
 streamlit run streamlit/streamlit_chat.py
 ```
+
+## triton_kernels
+
+triton_kernels is a set of kernels that enable fast moe on different architectures. These kernels are compatible with different precision (e.g bf16, mxfp4)
+
+Original code here https://github.com/triton-lang/triton/tree/main/python/triton_kernels
+
+The current version is the following commit de4376e90a3c2b5ca30ada25a50cccadeadf7f1a and use BlackwellMXValueLayout with commit 19ca20fda4cfd3ae0d3eabde5e547db581fbb7ee。 
+
