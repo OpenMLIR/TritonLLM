@@ -48,3 +48,6 @@ include-package-data = true
 
 [tool.setuptools.packages.find]
 include = ["tritonllm*"]
+
+[project.scripts]
+tritonllm = "tritonllm.entrypoints.cli:main"
