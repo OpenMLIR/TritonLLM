@@ -26,7 +26,7 @@ pip install tritonllm
 
 ## 🚀 Command Line Interface (CLI)
 
-To quickly launch with the 20B model from ModelScope
+To quickly launch with the **gpt-oss-20b** model and automatically download it from ModelScope:
 
 ```shell
 tritonllm
