@@ -83,7 +83,7 @@ usage: tritonllm [-h] [-r REASONING_EFFORT] [-a] [-b] [--show-browser-results] [
 | `--raw` | 原始模式，禁用 Harmony 编码并输出纯文本。默认：`False`。 |
 
 
-## 安装
+## 源码安装
 
 ```shell
 git clone https://github.com/OpenMLIR/tritonllm
