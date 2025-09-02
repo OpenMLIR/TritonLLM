@@ -51,7 +51,7 @@ usage: tritonllm [-h] [-r REASONING_EFFORT] [-a] [-b] [--show-browser-results] [
 
 | Argument | Description |
 |----------|-------------|
-| `FILE`   | Path to the SafeTensors checkpoint. If not provided, downloads the **20B model** from ModelScope. |
+| `FILE`   | Path to the SafeTensors checkpoint. If not provided, downloads the **20B model** from ModelScope. You can also run `tritonllm 120b` to directly use the **120B model** from ModelScope.   |
 
 #### Options
 
