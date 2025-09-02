@@ -32,7 +32,58 @@ LLM Inference via Triton 🚀
 - 若 GPU 显存 **≥ 24 GB**，可运行 **gpt-oss-20b**。
 - 若 GPU 显存 **≥ 80 GB**，可运行 **gpt-oss-120b**。
 
-## 安装
+## 快速安装
+
+你可以通过 pip 安装 tritonllm 的最新稳定版本
+
+```shell
+pip install tritonllm
+```
+
+## 命令行界面 (CLI)
+
+快速启动 gpt-oss-20b 模型的对话，将自动从 ModelScope 魔搭下载。
+
+```shell
+tritonllm
+```
+
+你也可以查看所有可用选项：
+
+```shell
+tritonllm --help
+```
+
+### 使用方法
+
+```
+usage: tritonllm [-h] [-r REASONING_EFFORT] [-a] [-b] [--show-browser-results] [-p]
+                 [--developer-message DEVELOPER_MESSAGE] [-c CONTEXT] [--raw]
+                 [FILE]
+```
+
+## 位置参数
+
+| 参数 | 说明 |
+|------|------|
+| `FILE` | SafeTensors 检查点文件路径。如果未提供，将自动下载 **20B 模型**。你也可以运行 `tritonllm 120b` 来直接使用 **120B 模型**。 |
+
+## 可选参数
+
+| 参数 | 说明 |
+|------|------|
+| `-h, --help` | 显示帮助信息并退出。 |
+| `-r REASONING_EFFORT, --reasoning-effort REASONING_EFFORT` | 设置推理努力等级（`low` / `medium` / `high`）。默认：`high`。 |
+| `-a, --apply-patch` | 使模型可使用内部 `apply_patch` 函数。默认：`False`。 |
+| `-b, --browser` | 启用浏览器工具，让模型可以抓取网页内容。默认：`False`。 |
+| `--show-browser-results` | 在输出中显示抓取的浏览器结果。默认：`False`。 |
+| `-p, --python` | 启用 Python 执行工具（允许模型运行 Python 代码片段）。默认：`False`。 |
+| `--developer-message DEVELOPER_MESSAGE` | 提供开发者/系统消息以影响模型行为。 |
+| `-c CONTEXT, --context CONTEXT` | 最大上下文长度（Token 数）。默认：`8192`。 |
+| `--raw` | 原始模式，禁用 Harmony 编码并输出纯文本。默认：`False`。 |
+
+
+## 源码安装
 
 ```shell
 git clone https://github.com/OpenMLIR/tritonllm
@@ -91,3 +142,13 @@ streamlit run streamlit/streamlit_chat.py
 [Triton Kernel 优先：全新 LLM 推理方式(47e9dcb)](https://zhuanlan.zhihu.com/p/1939592984820691987)
 
 [5090显卡+Triton，轻松玩转GPT-OSS-20B！(6bb4b91)](https://zhuanlan.zhihu.com/p/1936692690503865129)
+
+## triton_kernels
+
+triton_kernels 是一组用于在不同架构上实现高速 MoE（Mixture of Experts）的核函数（kernels）。这些内核支持多种精度格式（例如 bf16、mxfp4）。
+
+原始代码在这里：
+https://github.com/triton-lang/triton/tree/main/python/triton_kernels
+
+当前版本对应的提交为：de4376e90a3c2b5ca30ada25a50cccadeadf7f1a，
+并且使用了 BlackwellMXValueLayout 的提交：19ca20fda4cfd3ae0d3eabde5e547db581fbb7ee。

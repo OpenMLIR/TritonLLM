@@ -291,7 +291,7 @@ def get_parser_args():
         "--reasoning-effort",
         metavar="REASONING_EFFORT",
         type=str,
-        default="low",
+        default="high",
         choices=["high", "medium", "low"],
         help="Reasoning effort",
     )
