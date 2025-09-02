@@ -80,10 +80,10 @@ def init_env():
     sys.modules['gpt_oss'] = gpt_oss
 
     os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
-    os.environ["TIKTOKEN_CACHE_DIR"] = tritonllm_bin_dir
+    # os.environ["TIKTOKEN_CACHE_DIR"] = tritonllm_bin_dir
 
     # download o200k_base.tiktoken
-    save_file_to_tritonllm_bin_dir(tritonllm_bin_dir)
+    # save_file_to_tritonllm_bin_dir(tritonllm_bin_dir)
 
 
 @tl.constexpr_function
