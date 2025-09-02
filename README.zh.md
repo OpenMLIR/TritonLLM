@@ -99,7 +99,5 @@ triton_kernels 是一组用于在不同架构上实现高速 MoE（Mixture of Ex
 原始代码在这里：
 https://github.com/triton-lang/triton/tree/main/python/triton_kernels
 
-当前版本对应的提交为：
-de4376e90a3c2b5ca30ada25a50cccadeadf7f1a，
-并且使用了 BlackwellMXValueLayout 来提交：
-19ca20fda4cfd3ae0d3eabde5e547db581fbb7ee。
+当前版本对应的提交为：de4376e90a3c2b5ca30ada25a50cccadeadf7f1a，
+并且使用了 BlackwellMXValueLayout 的提交：19ca20fda4cfd3ae0d3eabde5e547db581fbb7ee。
