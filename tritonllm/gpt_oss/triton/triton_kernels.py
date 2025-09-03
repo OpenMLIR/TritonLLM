@@ -36,6 +36,8 @@ def rmsnorm_forward(x, scale, eps):
 def rope_kernel(
     query_ptr,
     key_ptr,
+    out1_ptr,
+    out2_ptr,
     sin_ptr,
     cos_ptr,
     offset_ptr,
@@ -50,7 +52,9 @@ def rope_kernel(
     pid = tl.program_id(0)
     pid_t = tl.program_id(1)
     query_ptr += pid * num_tokens * num_heads * head_dim
+    out1_ptr += pid * num_tokens * num_heads * head_dim
     key_ptr += pid * num_tokens * num_key_value_heads * head_dim
+    out2_ptr += pid * num_tokens * num_key_value_heads * head_dim
     offs_token = pid_t * TILE_TOKENS + tl.arange(0, TILE_TOKENS)[:, None]
     offset = tl.load(offset_ptr)
     new_offs_token = (offs_token + offset) % max_context_length
@@ -71,8 +75,8 @@ def rope_kernel(
     q2 = tl.load(query_ptr + offs + head_dim_div, mask=q_k_mask)
     o1 = q1 * cos - q2 * sin
     o2 = q2 * cos + q1 * sin
-    tl.store(query_ptr + offs, o1, mask=q_k_mask)
-    tl.store(query_ptr + offs + head_dim_div, o2, mask=q_k_mask)
+    tl.store(out1_ptr + offs, o1, mask=q_k_mask)
+    tl.store(out1_ptr + offs + head_dim_div, o2, mask=q_k_mask)
     stride_0 = num_key_value_heads * head_dim
     offs_num_key_value_heads = tl.arange(0, num_key_value_heads)[None, :, None]
     offs = offs_token * stride_0 + offs_num_key_value_heads * head_dim + offs_dim
@@ -81,17 +85,21 @@ def rope_kernel(
     k2 = tl.load(key_ptr + offs + head_dim_div, mask=q_k_mask)
     o1 = k1 * cos - k2 * sin
     o2 = k2 * cos + k1 * sin
-    tl.store(key_ptr + offs, o1, mask=q_k_mask)
-    tl.store(key_ptr + offs + head_dim_div, o2, mask=q_k_mask)
+    tl.store(out2_ptr + offs, o1, mask=q_k_mask)
+    tl.store(out2_ptr + offs + head_dim_div, o2, mask=q_k_mask)
 
 def rope_forward(query, key, sin, cos, max_context_length, offset):
     batch_size, num_tokens, num_heads, head_dim = query.shape
+    out1 = torch.empty_like(query)
     batch_size, num_tokens, num_key_value_heads, head_dim = key.shape
+    out2 = torch.empty_like(key)
 
     grid = lambda META: (batch_size, triton.cdiv(num_tokens, META['TILE_TOKENS']))
     rope_kernel[grid](
         query,
         key,
+        out1,
+        out2,
         sin,
         cos,
         offset,
@@ -103,6 +111,7 @@ def rope_forward(query, key, sin, cos, max_context_length, offset):
         head_dim // 2,
         TILE_TOKENS = 1 if num_tokens < 60 else 32,
     )
+    return out1, out2
 
 
 @triton.jit

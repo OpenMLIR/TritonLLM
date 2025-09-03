@@ -195,8 +195,7 @@ class RotaryEmbedding(torch.nn.Module):
         key: torch.Tensor,
         offset: torch.LongTensor,
     ) -> tuple[torch.Tensor, torch.Tensor]:
-        rope_forward(query, key, self.sin, self.cos, self.max_context_length, offset)
-        return query, key
+        return rope_forward(query, key, self.sin, self.cos, self.max_context_length, offset)
 
 
 class Cache:
